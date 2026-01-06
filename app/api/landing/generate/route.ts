@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import OpenAI from 'openai'
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import { GoogleGenAI } from '@google/genai'
 
 const InputSchema = z.object({
   ownerPrompt: z.string().min(10),
@@ -19,10 +17,18 @@ const InputSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+    if (!geminiKey) {
+      return NextResponse.json(
+        { error: 'Gemini API key not configured' },
+        { status: 500 }
+      )
+    }
+
     const body = await req.json()
     const { ownerPrompt, agentName, defaults } = InputSchema.parse(body)
 
-    const system = `You convert natural descriptions into a minimal LandingSpec JSON for a museum AI exhibit.
+    const system = `You convert natural descriptions into a LandingSpec JSON for a museum AI exhibit with GSAP animations.
 
 Output ONLY valid JSON matching this EXACT structure:
 
@@ -35,18 +41,78 @@ Output ONLY valid JSON matching this EXACT structure:
     "background": "#FFFFFF",
     "text": "#111827"
   },
-  "blocks": []
+  "animationConfig": {
+    "enabled": true,
+    "orchestration": {
+      "mode": "sequence",
+      "staggerDelay": 0.2
+    },
+    "scrollTrigger": {
+      "enabled": true,
+      "smooth": true
+    }
+  },
+  "blocks": [
+    {
+      "id": "intro-1",
+      "type": "paragraph",
+      "text": "Welcome text here",
+      "animation": {
+        "preset": "fadeIn",
+        "trigger": { "type": "onload" },
+        "enabled": true
+      }
+    }
+  ],
+  "imagePrompt": "a detailed image prompt based on the description"
 }
 
-Rules:
-- Use ONLY hex colors (#RRGGBB format)
-- Keep it EXTREMELY minimal - just title and optional subtitle
-- blocks array should be EMPTY - no paragraphs, no bullets, no CTAs
-- Mobile-first, high-contrast, bold colors for Art Deco aesthetic
-- No extra fields beyond the schema shown
-- Choose rich, luxurious colors that work well with Art Deco design (gold, navy, emerald, burgundy, teal)`
+ANIMATION GUIDELINES:
 
-    const user = [
+1. Animation Presets (use these):
+   - "fadeIn": Fade in from transparent
+   - "slideUp": Slide up from below with fade
+   - "slideDown": Slide down from above
+   - "slideLeft": Slide from left
+   - "slideRight": Slide from right
+   - "scaleIn": Scale up from small
+   - "rotateIn": Rotate in with fade
+   - "none": No animation
+
+2. Orchestration Modes:
+   - "sequence": Blocks animate one after another (storytelling)
+   - "stagger": Cascading delay (for lists)
+   - "parallel": All at once
+
+3. Trigger Types:
+   - "onload": Animate when page loads (use for hero/first elements)
+   - "viewport": Animate when element enters viewport (use for scrollable content, threshold 0.3-0.5)
+   - "scroll": Advanced scroll-based
+
+4. Best Practices:
+   - First block: "fadeIn" with "onload" trigger
+   - Feature lists: "slideUp" with "viewport" trigger, threshold 0.3
+   - CTAs: "scaleIn" for emphasis
+   - Set "once": true for most viewport animations
+   - Use 1-3 blocks typically, keep it minimal
+
+5. Block Types:
+   - paragraph: {"id": "p1", "type": "paragraph", "text": "..."}
+   - bulletList: {"id": "list1", "type": "bulletList", "items": ["..."]}
+   - cta: {"id": "cta1", "type": "cta", "label": "...", "href": "..."}
+
+CONTENT RULES:
+- Use ONLY hex colors (#RRGGBB format)
+- Create 1-3 content blocks with meaningful exhibit information
+- Mobile-first, high-contrast, bold colors for Art Deco aesthetic
+- Choose rich, luxurious colors (gold #FFD700, navy #000080, emerald #50C878, burgundy #800020, teal #008080)
+- IMPORTANT: Generate an "imagePrompt" field with a vivid, detailed description for hero image
+  - Include artistic style hints like "oil painting", "digital art", "photograph"
+  - Be specific about visual elements, mood, and atmosphere
+- Each block MUST have a unique "id" field
+- Each block SHOULD have animation metadata`
+
+    const userPrompt = [
       `Agent Name: ${agentName}`,
       defaults?.title ? `Default Title: ${defaults.title}` : '',
       defaults?.primary ? `Default Primary: ${defaults.primary}` : '',
@@ -58,24 +124,30 @@ Rules:
       .filter(Boolean)
       .join('\n')
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
+    // Use the Google GenAI SDK for text generation
+    const ai = new GoogleGenAI({ apiKey: geminiKey })
+    
+    console.log('Generating landing spec with Gemini...')
+    
+    const textResponse = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: `${system}\n\n${userPrompt}`,
+      config: {
+        temperature: 0.7,
+        responseMimeType: 'application/json'
+      }
     })
 
-    // Extract and harden
-    const raw = response.choices[0]?.message?.content ?? '{}'
+    const raw = textResponse.text ?? '{}'
+    console.log('Gemini response:', raw.substring(0, 200))
+    
     let spec: any
     try {
       spec = JSON.parse(raw)
     } catch {
       spec = {}
     }
+    
     // Clamp to minimal safe defaults
     spec.version ??= 1
     spec.title ??= agentName
@@ -83,35 +155,102 @@ Rules:
     spec.theme.primary = safeHex(spec.theme?.primary, '#111827')
     spec.theme.background = safeHex(spec.theme?.background, '#FFFFFF')
     spec.theme.text = safeHex(spec.theme?.text, '#111827')
-    if (!Array.isArray(spec.blocks))
-      spec.blocks = [{ type: 'paragraph', text: `Welcome to ${agentName}.` }]
 
-    // Generate background image with DALL-E 3
-    console.log('Generating background image with DALL-E...')
-    try {
-      // Create a prompt for the background image based on the agent and description
-      const imagePrompt = `Art Deco style illustration for ${agentName}. ${ownerPrompt}. Bold geometric forms, rich colors, symmetrical patterns, streamlined shapes, luxurious aesthetic. NO TEXT, NO WORDS, NO LETTERS, NO TYPOGRAPHY. NO people, NO characters, NO figures - only Art Deco geometric patterns, shapes, and colors. Style: 1920s-1930s Art Deco with bold colors, metallic tones, stepped forms. Use colorful backgrounds (avoid white, use bold colors like gold, navy, emerald, burgundy, teal). IMPORTANT: Absolutely no text or words anywhere in the image.`
-
-      const imageResponse = await client.images.generate({
-        model: 'dall-e-3',
-        prompt: imagePrompt,
-        n: 1,
-        size: '1792x1024', // Wide format perfect for hero banners
-        quality: 'standard',
-      })
-
-      const imageUrl = imageResponse.data[0]?.url
-
-      if (imageUrl) {
-        spec.hero = {
-          imageUrl: imageUrl,
-          overlay: true, // Add overlay to ensure text readability
+    // Ensure blocks array exists
+    if (!Array.isArray(spec.blocks)) {
+      spec.blocks = [{
+        id: 'default-1',
+        type: 'paragraph',
+        text: `Welcome to ${agentName}.`,
+        animation: {
+          preset: 'fadeIn',
+          trigger: { type: 'onload' },
+          enabled: true
         }
-        console.log('Generated image URL:', imageUrl)
+      }]
+    }
+
+    // Add default animation config if missing
+    if (!spec.animationConfig) {
+      spec.animationConfig = {
+        enabled: true,
+        orchestration: {
+          mode: 'sequence',
+          staggerDelay: 0.2
+        },
+        scrollTrigger: {
+          enabled: true,
+          smooth: true
+        }
       }
+    }
+
+    // Ensure all blocks have IDs and default animations
+    spec.blocks = spec.blocks.map((block: any, index: number) => {
+      if (!block.id) {
+        block.id = `block-${index + 1}`
+      }
+      if (!block.animation) {
+        block.animation = {
+          preset: index === 0 ? 'fadeIn' : 'slideUp',
+          trigger: {
+            type: index === 0 ? 'onload' : 'viewport',
+            threshold: 0.3,
+            once: true
+          },
+          enabled: true
+        }
+      }
+      return block
+    })
+
+    // Generate hero image using description from user
+    const imagePrompt = spec.imagePrompt || ownerPrompt
+    delete spec.imagePrompt // Remove from final spec
+
+    try {
+      const fullImagePrompt = `Create a beautiful, artistic image for a museum exhibit landing page. Subject: ${imagePrompt}. Style: ${agentName} themed, art deco inspired, elegant and sophisticated, museum quality, professional photography or digital art, dramatic lighting, rich colors.`
+      console.log('Generating hero image with Gemini:', fullImagePrompt.substring(0, 100) + '...')
+      
+      let heroImageUrl: string | null = null
+      
+      // Try Gemini image generation with gemini-2.5-flash-image
+      try {
+        const imageResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: fullImagePrompt,
+        })
+
+        // Extract image from response
+        for (const part of imageResponse.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData) {
+            const imageData = part.inlineData.data
+            const mimeType = part.inlineData.mimeType || 'image/png'
+            heroImageUrl = `data:${mimeType};base64,${imageData}`
+            console.log('Gemini hero image generated successfully')
+            break
+          }
+        }
+      } catch (geminiImageError: any) {
+        console.log('Gemini image generation failed:', geminiImageError.message)
+      }
+      
+      // Fallback to Pollinations.ai if Gemini fails
+      if (!heroImageUrl) {
+        console.log('Using Pollinations.ai fallback for hero image')
+        const encodedPrompt = encodeURIComponent(fullImagePrompt)
+        heroImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&nologo=true`
+      }
+      
+      // Add hero to spec
+      spec.hero = {
+        imageUrl: heroImageUrl,
+        overlay: true
+      }
+      
+      console.log('Hero image set:', heroImageUrl ? (heroImageUrl.startsWith('data:') ? 'Gemini base64 image' : heroImageUrl.substring(0, 50)) : 'none')
     } catch (imageError: any) {
-      console.error('Error generating image:', imageError)
-      // Continue without image if generation fails
+      console.error('Image generation failed, continuing without hero:', imageError.message)
     }
 
     return NextResponse.json({ spec }, { status: 200 })

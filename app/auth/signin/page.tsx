@@ -45,7 +45,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Sign In</CardTitle>
-          <CardDescription>Welcome back to PowerWyze</CardDescription>
+          <CardDescription>Welcome back to Voicify It</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignIn} className="space-y-4">

@@ -87,19 +87,20 @@ export function VapiTest({ agentConfig, tier = 1, vapiAssistantId }: VapiTestPro
           firstMessage: agentConfig.firstMessage || `Hello! I'm ${agentConfig.name}. How can I help you today?`,
         }
 
-        // Model configuration based on tier
+        // Model configuration based on tier - All tiers use Gemini 3 Flash
+        assistant.model = {
+          provider: 'google',
+          model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+          messages: [
+            {
+              role: 'system',
+              content: agentConfig.systemPrompt || agentConfig.personality || 'You are a helpful assistant.'
+            }
+          ]
+        }
+        
         if (tier === 1) {
-          // Tier 1: GPT-3.5 Turbo
-          assistant.model = {
-            provider: 'openai',
-            model: 'gpt-3.5-turbo',
-            messages: [
-              {
-                role: 'system',
-                content: agentConfig.systemPrompt || agentConfig.personality || 'You are a helpful assistant.'
-              }
-            ]
-          }
+          // Tier 1: Standard voice setup
           assistant.voice = {
             provider: '11labs',
             voiceId: '21m00Tcm4TlvDq8ikWAM' // 11Labs Rachel voice
@@ -109,20 +110,8 @@ export function VapiTest({ agentConfig, tier = 1, vapiAssistantId }: VapiTestPro
             model: 'nova-2',
             language: 'en-US'
           }
-        } else if (tier === 2 || tier === 3) {
-          // Tier 2 & 3: GPT-4o Realtime
-          assistant.model = {
-            provider: 'openai',
-            model: 'gpt-4o-realtime-preview',
-            messages: [
-              {
-                role: 'system',
-                content: agentConfig.systemPrompt || agentConfig.personality || 'You are a helpful assistant.'
-              }
-            ]
-          }
-          // No separate voice/transcriber needed for realtime model
         }
+        // Tier 2 & 3: Additional capabilities handled by Vapi
 
         await vapiRef.current.start(assistant)
       }
@@ -203,7 +192,7 @@ export function VapiTest({ agentConfig, tier = 1, vapiAssistantId }: VapiTestPro
       <div className="bg-muted/50 rounded-lg p-4 space-y-2">
         <h4 className="text-sm font-medium">Test Configuration</h4>
         <div className="text-xs space-y-1 text-muted-foreground">
-          <p><strong>Tier:</strong> {tier} ({tier === 1 ? 'GPT-3.5 Turbo' : 'GPT-4o Realtime'})</p>
+          <p><strong>Tier:</strong> {tier} (Gemini 3 Flash)</p>
           <p><strong>Voice:</strong> {agentConfig.voice}</p>
           <p><strong>Personality:</strong> {agentConfig.personality?.substring(0, 100)}...</p>
         </div>

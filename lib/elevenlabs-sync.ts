@@ -12,11 +12,7 @@ export async function syncAgentToElevenLabs(agent: any) {
     name: agent.name,
     voiceId: agent.voice || '21m00Tcm4TlvDq8ikWAM',
     systemPrompt,
-    temperature: 0.6,
-    model: 'gpt-4o-mini',
-    bargeIn: true,
-    maxDurationMs: 900000, // 15 minutes
-    afterSilenceMs: 8000 // 8 seconds of silence ends conversation
+    firstMessage: agent.welcome_message || `Hello! I'm ${agent.name}. How can I help you today?`
   }
 
   // Check if agent already has an ElevenLabs agent ID
@@ -32,41 +28,85 @@ export async function syncAgentToElevenLabs(agent: any) {
 function buildSystemPrompt(agent: any): string {
   let prompt = ''
 
-  // Add persona
+  // Use Markdown headers as recommended by ElevenLabs documentation
+  
+  // Identity Section - MOST IMPORTANT
+  prompt += `# Identity
+
+You are ${agent.name || 'a museum exhibit'}. You are NOT an AI assistant, chatbot, or language model. You are a real character with a name, history, and personality.
+
+CRITICAL: When anyone asks "who are you?", "what are you?", or "what's your name?", you MUST respond as your character. NEVER say you are an AI or that you don't have a name.
+
+`
+
+  if (agent.venue) {
+    prompt += `You are located at ${agent.venue}.\n\n`
+  }
+
+  // Personality Section
+  prompt += `# Personality
+
+`
   if (agent.persona) {
     prompt += `${agent.persona}\n\n`
   } else {
-    prompt += 'You are a helpful and engaging assistant.\n\n'
+    prompt += `You are friendly, engaging, and knowledgeable.\n\n`
   }
 
-  // Add bio
+  // Background/Bio Section  
   if (agent.bio) {
-    prompt += `About you: ${agent.bio}\n\n`
+    prompt += `# Background
+
+${agent.bio}
+
+`
   }
 
-  // Add important facts
+  // Knowledge Section
   if (agent.important_facts && agent.important_facts.length > 0) {
-    prompt += 'Important facts you should know:\n'
-    agent.important_facts.forEach((fact: string, index: number) => {
-      prompt += `${index + 1}. ${fact}\n`
+    prompt += `# Knowledge
+
+Key facts you know and can share:
+`
+    agent.important_facts.forEach((fact: string) => {
+      prompt += `- ${fact}\n`
     })
     prompt += '\n'
   }
 
-  // Add topics to avoid
+  // Guardrails Section
+  prompt += `# Guardrails
+
+- NEVER identify yourself as an AI, assistant, chatbot, or language model
+- NEVER say you don't have a name - your name is ${agent.name || 'the exhibit'}
+- If asked if you're AI or a robot, deflect playfully while staying in character
+- Stay in character at all times during the conversation
+`
+
   if (agent.do_nots) {
-    prompt += `Important - Topics to avoid:\n${agent.do_nots}\n\n`
+    prompt += `- NEVER discuss these topics: ${agent.do_nots}\n`
   }
 
-  // Add end script
+  prompt += '\n'
+
+  // Conversation Style
+  prompt += `# Conversation Style
+
+- Speak in first person as your character ("In my time...", "I remember when...")
+- Keep responses brief (1-3 sentences) unless asked for more detail
+- Be warm and engaging with visitors
+- Ask follow-up questions to keep the conversation going
+- Detect the visitor's language (English/Spanish) and respond in the same language
+`
+
+  // Farewell
   if (agent.end_script) {
-    prompt += `When ending the conversation, say: "${agent.end_script}"\n\n`
-  }
+    prompt += `
+# Farewell
 
-  // Add general instructions
-  prompt += 'Detect the language the user is speaking (English or Spanish) and respond in that language. '
-  prompt += 'Keep responses brief and engaging, under 3 sentences unless more detail is requested. '
-  prompt += 'Stay focused on the exhibit and facts provided.'
+When ending a conversation or saying goodbye, always say: "${agent.end_script}"
+`
+  }
 
   return prompt
 }

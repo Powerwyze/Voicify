@@ -18,6 +18,7 @@ interface Agent {
   venue: {
     display_name: string
     kind: string
+    background_image_url?: string
   }
   organization: {
     id: string
@@ -267,6 +268,7 @@ export default function VisitorPage() {
           agentName={agent.name}
           onTalkClick={handleStartTalk}
           onScanAnotherClick={handleScanAnother}
+          backgroundImage={agent.venue?.background_image_url}
         />
 
         {/* Talk Widget Overlay */}
@@ -297,10 +299,12 @@ export default function VisitorPage() {
     subtitle: agent.bio || `Welcome! I'm here to help you.`,
     blocks: [
       {
+        id: 'default-bio',
         type: 'paragraph',
         text: agent.bio || 'Tap below to start your guided conversation.',
       },
       {
+        id: 'default-languages',
         type: 'bulletList',
         items: agent.supportedLanguages.map((lang) => `${lang} supported`),
       },
@@ -314,6 +318,7 @@ export default function VisitorPage() {
         agentName={agent.name}
         onTalkClick={handleStartTalk}
         onScanAnotherClick={handleScanAnother}
+        backgroundImage={agent.venue?.background_image_url}
       />
 
       {/* Talk Widget Overlay */}

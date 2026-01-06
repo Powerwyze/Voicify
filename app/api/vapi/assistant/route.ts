@@ -117,7 +117,7 @@ function buildVapiAssistant(config: AgentConfig) {
 
   // Voice configuration (tier-specific)
   const voice: any = {
-    provider: tier === 1 ? "vapi" : "openai",
+    provider: tier === 1 ? "vapi" : "google",
     voiceId: tier === 1 ? voiceId : undefined,
   }
 
@@ -126,11 +126,11 @@ function buildVapiAssistant(config: AgentConfig) {
     voice.languages = ["en", "es"]
   }
 
-  // Model configuration (tier-specific)
+  // Model configuration - All tiers use Gemini 3 Flash
   const model: any = {
-    provider: "openai",
-    model: tier === 1 ? "gpt-3.5-turbo" : "gpt-4o-realtime-preview",
-    temperature: 0.7,
+    provider: "google",
+    model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+    temperature: 1.0, // Gemini 3 is optimized for temperature 1.0
     messages: [
       {
         role: "system",

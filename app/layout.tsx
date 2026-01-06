@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PowerWyze - AI Voice Agent Platform',
-  description: 'Create and manage AI voice-agent exhibits for museums and events',
+  title: 'Voicify It - AI Voice Agent Platform',
+  description: 'Transform your museum or event with AI voice agents. Engage visitors through natural conversations.',
 }
 
 export default function RootLayout({
@@ -16,7 +16,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>{children}</body>
+      <head>
+        <meta name="color-scheme" content="light" />
+      </head>
+      <body
+        className={inter.className}
+        suppressHydrationWarning
+        style={{ backgroundColor: '#ffffff', color: '#111827' }}
+      >
+        {children}
+      </body>
     </html>
   )
 }

@@ -105,19 +105,20 @@ export function VapiVisitor({ config, onEnd }: VapiVisitorProps) {
           firstMessage: config.config.firstMessage || `Hello! I'm ${config.config.name}. How can I help you today?`,
         }
 
-        // Model configuration based on tier
+        // Model configuration based on tier - All tiers use Gemini 3 Flash
+        assistant.model = {
+          provider: 'google',
+          model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+          messages: [
+            {
+              role: 'system',
+              content: config.config.systemPrompt || config.config.personality || 'You are a helpful assistant.'
+            }
+          ]
+        }
+        
         if (config.tier === 1) {
-          // Tier 1: GPT-3.5 Turbo
-          assistant.model = {
-            provider: 'openai',
-            model: 'gpt-3.5-turbo',
-            messages: [
-              {
-                role: 'system',
-                content: config.config.systemPrompt || config.config.personality || 'You are a helpful assistant.'
-              }
-            ]
-          }
+          // Tier 1: Standard voice setup
           assistant.voice = {
             provider: '11labs',
             voiceId: '21m00Tcm4TlvDq8ikWAM' // 11Labs Rachel voice
@@ -127,20 +128,8 @@ export function VapiVisitor({ config, onEnd }: VapiVisitorProps) {
             model: 'nova-2',
             language: 'en-US'
           }
-        } else if (config.tier === 2 || config.tier === 3) {
-          // Tier 2 & 3: GPT-4o Realtime
-          assistant.model = {
-            provider: 'openai',
-            model: 'gpt-4o-realtime-preview',
-            messages: [
-              {
-                role: 'system',
-                content: config.config.systemPrompt || config.config.personality || 'You are a helpful assistant.'
-              }
-            ]
-          }
-          // No separate voice/transcriber needed for realtime model
         }
+        // Tier 2 & 3: Additional capabilities handled by Vapi
 
         await vapiRef.current.start(assistant)
       }

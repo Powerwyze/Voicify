@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
         venues (
           id,
           display_name,
-          kind
+          kind,
+          background_image_url
         ),
         organizations (
           id,

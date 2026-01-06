@@ -63,7 +63,7 @@ export default function TestElevenLabsPage() {
 
   const getAIResponse = async (userText: string) => {
     try {
-      const res = await fetch('/api/chat/openai', {
+      const res = await fetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -198,16 +198,12 @@ export default function TestElevenLabsPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>ElevenLabs API Key:</span>
-              <span className="font-mono text-xs">
-                {process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY ? '✓ Set' : '✗ Missing'}
-              </span>
+              <span>ElevenLabs API:</span>
+              <span className="font-mono text-xs">server-configured</span>
             </div>
             <div className="flex justify-between">
-              <span>OpenAI API Key:</span>
-              <span className="font-mono text-xs">
-                {process.env.NEXT_PUBLIC_OPENAI_API_KEY ? '✓ Set' : '✗ Missing'}
-              </span>
+              <span>Gemini API:</span>
+              <span className="font-mono text-xs">server-configured</span>
             </div>
           </CardContent>
         </Card>

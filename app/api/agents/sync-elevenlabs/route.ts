@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get agent details
+    // Get agent details with venue info
     const { data: agent, error: fetchError } = await supabase
       .from('agents')
-      .select('*')
+      .select('*, venues(display_name)')
       .eq('id', agentId)
       .single()
 
@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Agent not found' },
         { status: 404 }
       )
+    }
+
+    // Add venue name to agent object for system prompt
+    if (agent.venues) {
+      agent.venue = agent.venues.display_name
     }
 
     // Sync agent to ElevenLabs Conversational AI

@@ -37,8 +37,8 @@ export function Header() {
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/exhibits" className="text-xl font-bold">
-            PowerWyze
+          <Link href="/exhibits" className="text-xl font-bold gradient-text">
+            Voicify It
           </Link>
           <nav className="flex gap-4">
             <Link href="/exhibits" className="text-sm hover:underline">
@@ -46,6 +46,9 @@ export function Header() {
             </Link>
             <Link href="/billing" className="text-sm hover:underline">
               Billing
+            </Link>
+            <Link href="/settings" className="text-sm hover:underline">
+              Settings
             </Link>
           </nav>
         </div>

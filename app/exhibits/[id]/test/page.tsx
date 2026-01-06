@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Mic, MicOff, Volume2, MessageSquare, AlertCircle, CheckCircle2, Loader2, ArrowLeft } from 'lucide-react'
+import { Mic, MicOff, Volume2, MessageSquare, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Phone, RefreshCcw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { ElevenLabsConversation } from '@/components/elevenlabs-conversation'
+import { VapiTest } from '@/components/vapi-test'
 
 type LogEntry = {
   timestamp: string
@@ -17,19 +18,22 @@ type LogEntry = {
   details?: any
 }
 
-export default function ExhibitTestPage({ params }: { params: { id: string } }) {
+function ExhibitTestPageContent({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlMode = searchParams.get('mode') as 'vapi' | 'elevenlabs' | null
 
   // Agent/Exhibit data
   const [agent, setAgent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [testMode, setTestMode] = useState<'vapi' | 'elevenlabs' | null>(urlMode)
 
   // State
   const [isPlaying, setIsPlaying] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [apiStatus, setApiStatus] = useState({
     elevenlabs: 'unknown',
-    openai: 'unknown',
+    gemini: 'unknown',
     database: 'unknown'
   })
   const [testText, setTestText] = useState('Hello! This is a test of the voice synthesis system.')
@@ -85,6 +89,13 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
       }
 
       if (data) {
+        // Set test mode from agent's voice_platform if not specified in URL
+        if (!urlMode && data.voice_platform) {
+          setTestMode(data.voice_platform)
+        } else if (!urlMode) {
+          setTestMode('elevenlabs') // Default fallback
+        }
+
         // Load Tier 3 capabilities if applicable
         if (data.tier === 3) {
           const { data: capabilities } = await supabase
@@ -130,10 +141,10 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
   const testAPIKeys = async () => {
     addLog('info', 'Testing API connectivity...')
 
-    // Test OpenAI
+    // Test Gemini
     try {
-      addLog('info', 'Testing OpenAI API...')
-      const openAIRes = await fetch('/api/chat/openai', {
+      addLog('info', 'Testing Gemini API...')
+      const geminiRes = await fetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,17 +152,17 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
         })
       })
 
-      if (openAIRes.ok) {
-        setApiStatus(prev => ({ ...prev, openai: 'connected' }))
-        addLog('success', 'OpenAI API connected successfully')
+      if (geminiRes.ok) {
+        setApiStatus(prev => ({ ...prev, gemini: 'connected' }))
+        addLog('success', 'Gemini API connected successfully')
       } else {
-        const error = await openAIRes.text()
-        setApiStatus(prev => ({ ...prev, openai: 'error' }))
-        addLog('error', 'OpenAI API connection failed', error)
+        const error = await geminiRes.text()
+        setApiStatus(prev => ({ ...prev, gemini: 'error' }))
+        addLog('error', 'Gemini API connection failed', error)
       }
     } catch (error: any) {
-      setApiStatus(prev => ({ ...prev, openai: 'error' }))
-      addLog('error', 'OpenAI API test failed', error.message)
+      setApiStatus(prev => ({ ...prev, gemini: 'error' }))
+      addLog('error', 'Gemini API test failed', error.message)
     }
 
     // Test ElevenLabs
@@ -348,8 +359,8 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
                   {getStatusBadge(apiStatus.database)}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">OpenAI</span>
-                  {getStatusBadge(apiStatus.openai)}
+                  <span className="text-sm font-medium">Gemini</span>
+                  {getStatusBadge(apiStatus.gemini)}
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">ElevenLabs</span>
@@ -507,62 +518,231 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* Voice Conversation */}
+            {/* Voice Provider Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Voice Conversation</CardTitle>
+                <CardTitle>Voice Provider</CardTitle>
                 <CardDescription>
-                  Real-time conversation using ElevenLabs Conversational AI
+                  Currently testing with: <span className="font-semibold">{testMode === 'vapi' ? 'Vapi' : 'ElevenLabs'}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {agent?.elevenlabs_agent_id ? (
-                  <ElevenLabsConversation
-                    agentId={agent.elevenlabs_agent_id}
-                    onError={(error) => addLog('error', 'Conversation error', error)}
-                    onStatusChange={(status) => addLog('info', `Conversation status: ${status}`)}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <p className="text-sm text-yellow-800">
-                        This agent hasn't been synced to ElevenLabs Conversational AI yet.
-                      </p>
-                      <p className="text-xs text-yellow-600 mt-2">
-                        Publish the agent to create an ElevenLabs Conversational AI agent, or sync manually below.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        addLog('info', 'Syncing agent to ElevenLabs...')
-                        try {
-                          const res = await fetch('/api/agents/sync-elevenlabs', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ agentId: params.id })
-                          })
-                          const data = await res.json()
-                          if (data.success) {
-                            addLog('success', 'Agent synced to ElevenLabs successfully!', {
-                              elevenLabsAgentId: data.elevenLabsAgentId
-                            })
-                            // Reload agent to show conversation interface
-                            await loadExhibit()
-                          } else {
-                            addLog('error', 'Failed to sync agent', data.error)
-                          }
-                        } catch (error: any) {
-                          addLog('error', 'Sync failed', error.message)
-                        }
-                      }}
-                      className="w-full"
-                    >
-                      Sync to ElevenLabs
-                    </Button>
-                  </div>
-                )}
+                <div className="flex rounded-lg border overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setTestMode('vapi')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      testMode === 'vapi'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Phone className="h-4 w-4" />
+                    Vapi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTestMode('elevenlabs')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      testMode === 'elevenlabs'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Mic className="h-4 w-4" />
+                    ElevenLabs
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {testMode === 'vapi' 
+                    ? 'Vapi provides phone-quality voice conversations with low latency.'
+                    : 'ElevenLabs offers premium voice quality with multilingual support.'}
+                </p>
               </CardContent>
             </Card>
+
+            {/* Voice Conversation - ElevenLabs */}
+            {testMode === 'elevenlabs' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>ElevenLabs Conversation</CardTitle>
+                  <CardDescription>
+                    Real-time conversation using ElevenLabs Conversational AI
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {agent?.elevenlabs_agent_id ? (
+                    <div className="space-y-4">
+                      <ElevenLabsConversation
+                        agentId={agent.elevenlabs_agent_id}
+                        onError={(error) => addLog('error', 'ElevenLabs Conversation error', error)}
+                        onStatusChange={(status) => addLog('info', `ElevenLabs Conversation status: ${status}`)}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            addLog('info', 'Re-syncing agent to ElevenLabs...')
+                            try {
+                              const res = await fetch('/api/agents/sync-elevenlabs', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ agentId: params.id })
+                              })
+                              const data = await res.json()
+                              if (data.success) {
+                                addLog('success', 'Agent re-synced successfully! New settings are now active.')
+                              } else {
+                                addLog('error', 'Failed to re-sync agent', data.error)
+                              }
+                            } catch (error: any) {
+                              addLog('error', 'Re-sync failed', error.message)
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          <RefreshCcw className="h-4 w-4 mr-2" />
+                          Re-sync
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={async () => {
+                            addLog('info', 'Recreating agent from scratch...')
+                            try {
+                              const res = await fetch('/api/agents/recreate-elevenlabs', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ agentId: params.id })
+                              })
+                              const data = await res.json()
+                              if (data.success) {
+                                addLog('success', 'Agent recreated successfully! New agent is ready.', {
+                                  newAgentId: data.elevenLabsAgentId
+                                })
+                                // Reload to get new agent ID
+                                await loadExhibit()
+                              } else {
+                                addLog('error', 'Failed to recreate agent', data.error)
+                              }
+                            } catch (error: any) {
+                              addLog('error', 'Recreate failed', error.message)
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          <RefreshCcw className="h-4 w-4 mr-2" />
+                          Recreate
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-800">
+                          This agent hasn't been synced to ElevenLabs Conversational AI yet.
+                        </p>
+                        <p className="text-xs text-yellow-600 mt-2">
+                          Publish the agent to create an ElevenLabs Conversational AI agent, or sync manually below.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          addLog('info', 'Syncing agent to ElevenLabs...')
+                          try {
+                            const res = await fetch('/api/agents/sync-elevenlabs', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ agentId: params.id })
+                            })
+                            const data = await res.json()
+                            if (data.success) {
+                              addLog('success', 'Agent synced to ElevenLabs successfully!', {
+                                elevenLabsAgentId: data.elevenLabsAgentId
+                              })
+                              // Reload agent to show conversation interface
+                              await loadExhibit()
+                            } else {
+                              addLog('error', 'Failed to sync agent', data.error)
+                            }
+                          } catch (error: any) {
+                            addLog('error', 'Sync failed', error.message)
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        Sync to ElevenLabs
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Voice Conversation - Vapi */}
+            {testMode === 'vapi' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Vapi Conversation</CardTitle>
+                  <CardDescription>
+                    Real-time conversation using Vapi Voice AI
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {agent?.vapi_assistant_id ? (
+                    <VapiTest
+                      agentConfig={{
+                        name: agent.name,
+                        systemPrompt: agent.persona,
+                        personality: agent.persona,
+                        firstMessage: `Hello! I'm ${agent.name}. How can I help you today?`
+                      }}
+                      tier={agent.tier || 1}
+                      vapiAssistantId={agent.vapi_assistant_id}
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-800">
+                          This agent hasn't been synced to Vapi yet.
+                        </p>
+                        <p className="text-xs text-yellow-600 mt-2">
+                          Sync the agent to Vapi to enable voice conversations.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          addLog('info', 'Syncing agent to Vapi...')
+                          try {
+                            const res = await fetch('/api/agents/sync-vapi', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ agentId: params.id })
+                            })
+                            const data = await res.json()
+                            if (data.success) {
+                              addLog('success', 'Agent synced to Vapi successfully!', {
+                                vapiAssistantId: data.vapiAssistantId
+                              })
+                              // Reload agent to show conversation interface
+                              await loadExhibit()
+                            } else {
+                              addLog('error', 'Failed to sync agent', data.error)
+                            }
+                          } catch (error: any) {
+                            addLog('error', 'Sync failed', error.message)
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        Sync to Vapi
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Right Column - Debug Logs */}
@@ -618,5 +798,17 @@ export default function ExhibitTestPage({ params }: { params: { id: string } }) 
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ExhibitTestPage({ params }: { params: { id: string } }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    }>
+      <ExhibitTestPageContent params={params} />
+    </Suspense>
   )
 }

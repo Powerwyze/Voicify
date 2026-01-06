@@ -17,11 +17,7 @@ export async function PATCH(req: NextRequest) {
       name,
       voiceId,
       systemPrompt,
-      temperature,
-      model,
-      bargeIn,
-      maxDurationMs,
-      afterSilenceMs
+      firstMessage
     } = body
 
     if (!agentId) {
@@ -31,38 +27,55 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    // Build update payload
+    // Build update payload using ElevenLabs' built-in LLM
     const updatePayload: any = {}
 
     if (name) updatePayload.name = name
 
-    if (voiceId) {
-      updatePayload.voice = {
-        voice_id: voiceId,
-        model_id: 'eleven_multilingual_v2'
-      }
-    }
-
-    if (systemPrompt || temperature || model) {
+    // Use the new conversation_config structure with built-in LLM
+    if (systemPrompt || voiceId || firstMessage) {
       updatePayload.conversation_config = {
-        llm: {
-          provider: 'openai',
-          model: model || 'gpt-4o-mini',
-          temperature: temperature || 0.6
+        agent: {
+          prompt: {
+            prompt: systemPrompt,
+            ...(firstMessage && { first_message: firstMessage }),
+            // Add end_call tool so agent can hang up when user says goodbye
+            tools: [
+              {
+                type: 'system',
+                name: 'end_call',
+                description: 'End the call when the user says goodbye, thanks you, or indicates they are done with the conversation. Also end when they say words like: bye, ciao, adios, see you, talk later, gotta go, have to go.'
+              }
+            ]
+          },
+          language: 'en'
         },
-        system_prompt: systemPrompt
-      }
-    }
-
-    if (bargeIn !== undefined || maxDurationMs || afterSilenceMs) {
-      updatePayload.settings = {
-        barge_in: bargeIn ?? true,
-        end_conditions: {
-          after_silence_ms: afterSilenceMs || 8000,
-          max_duration_ms: maxDurationMs || 900000
+        tts: {
+          voice_id: voiceId || '21m00Tcm4TlvDq8ikWAM',
+          model_id: 'eleven_multilingual_v2'
         }
       }
     }
+
+    // Always ensure localhost is in allowlist for testing
+    updatePayload.platform_settings = {
+      auth: {
+        enable_auth: false,
+        allowlist: [
+          { hostname: 'localhost:3000' },
+          { hostname: 'localhost' },
+          { hostname: '127.0.0.1:3000' },
+          { hostname: '127.0.0.1' }
+        ]
+      }
+    }
+
+    // Log the update payload for debugging
+    console.log('=== ElevenLabs Update Payload ===')
+    console.log('Agent ID:', agentId)
+    console.log('Payload:', JSON.stringify(updatePayload, null, 2))
+    console.log('System Prompt Length:', updatePayload.conversation_config?.agent?.prompt?.prompt?.length || 0)
+    console.log('=================================')
 
     // Update ElevenLabs agent
     const response = await fetch(`https://api.elevenlabs.io/v1/convai/agents/${agentId}`, {

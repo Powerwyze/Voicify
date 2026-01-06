@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
       name,
       voiceId,
       systemPrompt,
-      temperature = 0.6,
-      model = 'gpt-4o-mini',
+      firstMessage,
       bargeIn = true,
       maxDurationMs = 900000,
       afterSilenceMs = 8000
@@ -30,35 +29,55 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create ElevenLabs conversational agent
+    console.log('System Prompt Length:', systemPrompt.length)
+    console.log('System Prompt Preview:', systemPrompt.substring(0, 500) + '...')
+
+    // Create ElevenLabs conversational agent using their built-in LLM
+    const payload = {
+      name,
+      conversation_config: {
+        agent: {
+          prompt: {
+            prompt: systemPrompt,
+            ...(firstMessage && { first_message: firstMessage }),
+            // Add end_call tool so agent can hang up when user says goodbye
+            tools: [
+              {
+                type: 'system',
+                name: 'end_call',
+                description: 'End the call when the user says goodbye, thanks you, or indicates they are done with the conversation. Also end when they say words like: bye, ciao, adios, see you, talk later, gotta go, have to go.'
+              }
+            ]
+          },
+          language: 'en'
+        },
+        tts: {
+          voice_id: voiceId,
+          model_id: 'eleven_multilingual_v2'
+        }
+      },
+      platform_settings: {
+        auth: {
+          enable_auth: false,
+          allowlist: [
+            { hostname: 'localhost:3000' },
+            { hostname: 'localhost' },
+            { hostname: '127.0.0.1:3000' },
+            { hostname: '127.0.0.1' }
+          ]
+        }
+      }
+    }
+
+    console.log('Creating agent with payload:', JSON.stringify(payload, null, 2))
+
     const response = await fetch('https://api.elevenlabs.io/v1/convai/agents/create', {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        name,
-        voice: {
-          voice_id: voiceId,
-          model_id: 'eleven_multilingual_v2'
-        },
-        conversation_config: {
-          llm: {
-            provider: 'openai',
-            model,
-            temperature
-          },
-          system_prompt: systemPrompt
-        },
-        settings: {
-          barge_in: bargeIn,
-          end_conditions: {
-            after_silence_ms: afterSilenceMs,
-            max_duration_ms: maxDurationMs
-          }
-        }
-      })
+      body: JSON.stringify(payload)
     })
 
     if (!response.ok) {
@@ -71,6 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json()
+    console.log('New agent created:', data.agent_id)
 
     return NextResponse.json({
       success: true,

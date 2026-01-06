@@ -59,6 +59,9 @@ function NewExhibitForm() {
   // Form fields - QR
   const [qrShape, setQrShape] = useState<'square' | 'circle'>('square')
 
+  // Form fields - Platform
+  const [voicePlatform, setVoicePlatform] = useState<'elevenlabs' | 'vapi'>('elevenlabs')
+
   // Tier 3 specific
   const [canSendEmail, setCanSendEmail] = useState(false)
   const [canSendSms, setCanSendSms] = useState(false)
@@ -164,6 +167,7 @@ function NewExhibitForm() {
       use_speaker_boost: true
     })
     setQrShape(agent.qr_shape || 'square')
+    setVoicePlatform(agent.voice_platform || 'elevenlabs')
     setLandingSpec(agent.landing_spec || null)
 
     // Load capabilities if Tier 3
@@ -237,6 +241,7 @@ function NewExhibitForm() {
         voice_name: voiceName,
         voice_settings: voiceSettings,
         qr_shape: qrShape,
+        voice_platform: voicePlatform,
         status: 'draft',
       }
 
@@ -286,14 +291,41 @@ function NewExhibitForm() {
     }
   }
 
+  const [syncing, setSyncing] = useState(false)
+
   const handleTest = async () => {
     if (!agentId) {
       setError('Please save the agent first')
       return
     }
 
-    // Redirect to the test page
-    router.push(`/exhibits/${agentId}/test`)
+    setSyncing(true)
+    setError(null)
+
+    try {
+      // Sync to the selected platform first
+      const syncEndpoint = voicePlatform === 'vapi' 
+        ? '/api/agents/sync-vapi' 
+        : '/api/agents/sync-elevenlabs'
+
+      const syncRes = await fetch(syncEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId })
+      })
+
+      if (!syncRes.ok) {
+        const data = await syncRes.json()
+        throw new Error(data.error || `Failed to sync with ${voicePlatform === 'vapi' ? 'Vapi' : 'ElevenLabs'}`)
+      }
+
+      // Redirect to the test page with the selected platform mode
+      router.push(`/exhibits/${agentId}/test?mode=${voicePlatform}`)
+    } catch (err: any) {
+      setError(err.message || 'Failed to sync agent')
+    } finally {
+      setSyncing(false)
+    }
   }
 
   const handlePublish = async () => {
@@ -772,6 +804,45 @@ function NewExhibitForm() {
               </CardContent>
             </Card>
 
+            {/* Voice Platform */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform</CardTitle>
+                <CardDescription>Choose which voice AI platform to use</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex rounded-lg border overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setVoicePlatform('vapi')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                      voicePlatform === 'vapi'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    Vapi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVoicePlatform('elevenlabs')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                      voicePlatform === 'elevenlabs'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    ElevenLabs
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {voicePlatform === 'vapi' 
+                    ? 'Vapi provides phone-quality voice conversations with low latency.'
+                    : 'ElevenLabs offers premium voice quality with multilingual support.'}
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Action Buttons */}
             <div className="flex gap-3 sticky bottom-4 bg-background p-4 border rounded-lg shadow-lg">
               <Button
@@ -794,11 +865,20 @@ function NewExhibitForm() {
 
               <Button
                 onClick={handleTest}
-                disabled={!agentId}
+                disabled={!agentId || syncing}
                 variant="outline"
               >
-                <Play className="h-4 w-4 mr-2" />
-                Test
+                {syncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Test
+                  </>
+                )}
               </Button>
 
               <Button

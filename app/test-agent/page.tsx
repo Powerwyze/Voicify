@@ -24,7 +24,7 @@ export default function TestAgentPage() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [apiStatus, setApiStatus] = useState({
     elevenlabs: 'unknown',
-    openai: 'unknown'
+    gemini: 'unknown'
   })
   const [testText, setTestText] = useState('Hello! This is a test of the ElevenLabs voice synthesis system.')
 
@@ -58,10 +58,10 @@ export default function TestAgentPage() {
   const testAPIKeys = async () => {
     addLog('info', 'Testing API connectivity...')
 
-    // Test OpenAI
+    // Test Gemini
     try {
-      addLog('info', 'Testing OpenAI API...')
-      const openAIRes = await fetch('/api/chat/openai', {
+      addLog('info', 'Testing Gemini API...')
+      const geminiRes = await fetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,17 +69,17 @@ export default function TestAgentPage() {
         })
       })
 
-      if (openAIRes.ok) {
-        setApiStatus(prev => ({ ...prev, openai: 'connected' }))
-        addLog('success', 'OpenAI API connected successfully')
+      if (geminiRes.ok) {
+        setApiStatus(prev => ({ ...prev, gemini: 'connected' }))
+        addLog('success', 'Gemini API connected successfully')
       } else {
-        const error = await openAIRes.text()
-        setApiStatus(prev => ({ ...prev, openai: 'error' }))
-        addLog('error', 'OpenAI API connection failed', error)
+        const error = await geminiRes.text()
+        setApiStatus(prev => ({ ...prev, gemini: 'error' }))
+        addLog('error', 'Gemini API connection failed', error)
       }
     } catch (error: any) {
-      setApiStatus(prev => ({ ...prev, openai: 'error' }))
-      addLog('error', 'OpenAI API test failed', error.message)
+      setApiStatus(prev => ({ ...prev, gemini: 'error' }))
+      addLog('error', 'Gemini API test failed', error.message)
     }
 
     // Test ElevenLabs
@@ -136,7 +136,7 @@ export default function TestAgentPage() {
       addLog('success', `Recognized speech (${Math.round(confidence * 100)}% confidence): "${userText}"`)
 
       // Get AI response
-      addLog('info', 'Sending message to OpenAI...')
+      addLog('info', 'Sending message to Gemini...')
       const aiResponse = await getAIResponse(userText)
       if (aiResponse) {
         setResponse(aiResponse)
@@ -171,7 +171,7 @@ export default function TestAgentPage() {
     try {
       addLog('info', 'Requesting AI response...', { userText })
 
-      const res = await fetch('/api/chat/openai', {
+      const res = await fetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -184,7 +184,7 @@ export default function TestAgentPage() {
 
       if (!res.ok) {
         const errorText = await res.text()
-        addLog('error', 'OpenAI API request failed', { status: res.status, error: errorText })
+        addLog('error', 'Gemini API request failed', { status: res.status, error: errorText })
         return null
       }
 
@@ -312,8 +312,8 @@ export default function TestAgentPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">OpenAI</span>
-                  {getStatusBadge(apiStatus.openai)}
+                  <span className="text-sm font-medium">Gemini</span>
+                  {getStatusBadge(apiStatus.gemini)}
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">ElevenLabs</span>
