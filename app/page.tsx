@@ -171,7 +171,8 @@ export default function LandingPage() {
         const chatViewport = phoneRef.current.querySelector('.ml-chat-viewport')
         const chatList = phoneRef.current.querySelector('.ml-chat-list')
         const chatBubbles = phoneRef.current.querySelectorAll('.ml-chat-bubble')
-        const waveBars = phoneRef.current.querySelectorAll('.ml-wave-bar')
+        const wavePaths = phoneRef.current.querySelectorAll('.ml-wave-path')
+        const waveDash = phoneRef.current.querySelector('.ml-wave-dash')
 
         gsap.from(copy, {
           opacity: 0,
@@ -202,17 +203,26 @@ export default function LandingPage() {
           )
         }
 
-        if (waveBars.length) {
-          const waveTween = gsap.to(waveBars, {
-            scaleY: () => gsap.utils.random(0.25, 1.0),
-            duration: 0.6,
-            ease: 'sine.inOut',
-            stagger: 0.05,
+        if (wavePaths.length) {
+          const waveD1 = 'M0,20 C14,8 28,32 42,20 C56,8 70,32 84,20 C98,8 112,32 126,20 C140,8 154,32 168,20 C182,8 196,32 210,20'
+          const waveD2 = 'M0,20 C14,12 28,28 42,20 C56,4 70,36 84,20 C98,10 112,30 126,20 C140,6 154,34 168,20 C182,14 196,26 210,20'
+          const waveD3 = 'M0,20 C14,6 28,34 42,20 C56,14 70,26 84,20 C98,2 112,38 126,20 C140,10 154,30 168,20 C182,4 196,36 210,20'
+
+          const waveTween = gsap.to(wavePaths, {
+            keyframes: [
+              { attr: { d: waveD2 }, duration: 0.5 },
+              { attr: { d: waveD3 }, duration: 0.5 },
+              { attr: { d: waveD1 }, duration: 0.5 },
+            ],
             repeat: -1,
-            yoyo: true,
-            transformOrigin: '50% 100%',
+            ease: 'sine.inOut',
           })
           cleanupFns.push(() => waveTween.kill())
+        }
+
+        if (waveDash) {
+          const dashTween = gsap.to(waveDash, { attr: { strokeDashoffset: -220 }, duration: 1.6, repeat: -1, ease: 'none' })
+          cleanupFns.push(() => dashTween.kill())
         }
 
         if (mock && chatViewport && chatList && chatBubbles.length) {
@@ -335,6 +345,22 @@ export default function LandingPage() {
       desc: 'Real-time voice chat tailored to the exhibit and venue brand.',
       image: '/assets/exhibits/live-call.jpg'
     }
+  ]
+
+  const monaLisaChat = [
+    { side: 'ai' as const, text: 'Welcome. Stand a little closer — the softer the edge, the louder the feeling.' },
+    { side: 'user' as const, text: 'Why is your smile so mysterious?' },
+    { side: 'ai' as const, text: 'Because Leonardo painted me with sfumato — soft edges that let emotions shift as you look.' },
+    { side: 'user' as const, text: 'Were you meant to be happy?' },
+    { side: 'ai' as const, text: 'I am meant to be human. A smile that holds both warmth and distance.' },
+    { side: 'user' as const, text: 'What makes this painting feel alive?' },
+    { side: 'ai' as const, text: 'The gaze. The light. The unfinished certainty — your mind completes the story.' },
+    { side: 'user' as const, text: 'Is it true you have no eyebrows?' },
+    { side: 'ai' as const, text: 'Some say they faded, others say Leonardo left them out. Mystery is part of my job.' },
+    { side: 'user' as const, text: 'What should I notice next?' },
+    { side: 'ai' as const, text: 'Look at the landscape behind me — it is a world that doesn’t quite belong to ours.' },
+    { side: 'user' as const, text: 'What would you ask me?' },
+    { side: 'ai' as const, text: 'What do you feel first: calm, curiosity, or unease? That answer is also my portrait.' },
   ]
 
   return (
@@ -617,14 +643,44 @@ export default function LandingPage() {
                     <div className="text-[11px] tracking-[0.25em] uppercase text-white/50 mb-2">Visitor Experience</div>
                     <div className="text-xl font-black text-white leading-tight">Mona Lisa</div>
 
-                    <div className="mt-3 flex items-end justify-center gap-1 h-6">
-                      {Array.from({ length: 18 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="ml-wave-bar w-1 rounded-full bg-gradient-to-t from-[var(--royal-violet)] to-[var(--electric-cyan)] opacity-80"
-                          style={{ height: `${8 + ((i * 7) % 14)}px`, transform: 'scaleY(0.6)' }}
+                    <div className="mt-3 flex items-center justify-center">
+                      <svg width="220" height="40" viewBox="0 0 220 40" className="opacity-95">
+                        <defs>
+                          <linearGradient id="mlWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="var(--electric-cyan)" />
+                            <stop offset="100%" stopColor="var(--royal-violet)" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          className="ml-wave-path ml-wave-dash"
+                          d="M0,20 C14,8 28,32 42,20 C56,8 70,32 84,20 C98,8 112,32 126,20 C140,8 154,32 168,20 C182,8 196,32 210,20"
+                          fill="none"
+                          stroke="url(#mlWaveGrad)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray="10 12"
+                          strokeDashoffset="0"
+                          style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.35))' }}
                         />
-                      ))}
+                        <path
+                          className="ml-wave-path"
+                          d="M0,20 C14,8 28,32 42,20 C56,8 70,32 84,20 C98,8 112,32 126,20 C140,8 154,32 168,20 C182,8 196,32 210,20"
+                          fill="none"
+                          stroke="url(#mlWaveGrad)"
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          opacity="0.12"
+                        />
+                        <path
+                          className="ml-wave-path"
+                          d="M0,20 C14,8 28,32 42,20 C56,8 70,32 84,20 C98,8 112,32 126,20 C140,8 154,32 168,20 C182,8 196,32 210,20"
+                          fill="none"
+                          stroke="url(#mlWaveGrad)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          opacity="0.45"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -634,33 +690,32 @@ export default function LandingPage() {
                   <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#05060B] to-transparent pointer-events-none" />
 
                   <div className="ml-chat-list space-y-3 will-change-transform">
-                    {[
-                      { side: 'user', text: 'Why is your smile so mysterious?' },
-                      { side: 'ai', text: 'Because Leonardo painted me with sfumato — soft edges that let emotions shift as you look.' },
-                      { side: 'user', text: 'Were you meant to be happy?' },
-                      { side: 'ai', text: 'I am meant to be human. A smile that holds both warmth and distance.' },
-                      { side: 'user', text: 'What makes this painting feel alive?' },
-                      { side: 'ai', text: 'The gaze. The light. The unfinished certainty — your mind completes the story.' },
-                      { side: 'user', text: 'Is it true you have no eyebrows?' },
-                      { side: 'ai', text: 'Some say they faded, others say Leonardo left them out. Mystery is part of my job.' },
-                      { side: 'user', text: 'What should I notice next?' },
-                      { side: 'ai', text: 'Look at the landscape behind me — it is a world that doesn’t quite belong to ours.' },
-                    ].map((m, i) => (
+                    {monaLisaChat.map((m, i) => (
                       <div
                         key={i}
-                        className={['ml-chat-bubble flex', m.side === 'user' ? 'justify-start' : 'justify-end'].join(' ')}
+                        className={['ml-chat-bubble flex items-end gap-2', m.side === 'ai' ? 'justify-start' : 'justify-end'].join(' ')}
                         style={{ willChange: 'transform, opacity' }}
                       >
+                        {m.side === 'ai' && (
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-white/5 border border-white/10 grid place-items-center text-[10px] font-black text-white/70">
+                            ML
+                          </div>
+                        )}
                         <div
                           className={[
                             'max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm',
-                            m.side === 'user'
+                            m.side === 'ai'
                               ? 'bg-white/10 text-white rounded-bl-sm border border-white/10'
                               : 'bg-gradient-to-r from-[var(--electric-cyan)] to-[var(--royal-violet)] text-black rounded-br-sm',
                           ].join(' ')}
                         >
                           {m.text}
                         </div>
+                        {m.side === 'user' && (
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[var(--electric-cyan)] to-[var(--royal-violet)] grid place-items-center text-[10px] font-black text-black">
+                            You
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
