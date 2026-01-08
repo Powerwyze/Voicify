@@ -126,8 +126,10 @@ export default function LandingPage() {
   useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
+    const cleanupFns: Array<() => void> = []
+
     // Small delay to ensure DOM is ready
-    setTimeout(() => {
+    const t = setTimeout(() => {
       // Scanner Transition Animation
       if (scannerRef.current) {
         const revealItems = scannerRef.current.querySelectorAll('.scan-card')
@@ -166,6 +168,10 @@ export default function LandingPage() {
       if (phoneRef.current) {
         const copy = phoneRef.current.querySelectorAll('.landing-copy > *')
         const mock = phoneRef.current.querySelector('.landing-mock')
+        const chatViewport = phoneRef.current.querySelector('.ml-chat-viewport')
+        const chatList = phoneRef.current.querySelector('.ml-chat-list')
+        const chatBubbles = phoneRef.current.querySelectorAll('.ml-chat-bubble')
+        const waveBars = phoneRef.current.querySelectorAll('.ml-wave-bar')
 
         gsap.from(copy, {
           opacity: 0,
@@ -194,6 +200,47 @@ export default function LandingPage() {
               }
             }
           )
+        }
+
+        if (waveBars.length) {
+          const waveTween = gsap.to(waveBars, {
+            scaleY: () => gsap.utils.random(0.25, 1.0),
+            duration: 0.6,
+            ease: 'sine.inOut',
+            stagger: 0.05,
+            repeat: -1,
+            yoyo: true,
+            transformOrigin: '50% 100%',
+          })
+          cleanupFns.push(() => waveTween.kill())
+        }
+
+        if (mock && chatViewport && chatList && chatBubbles.length) {
+          gsap.set(chatBubbles, { opacity: 0, y: 16 })
+
+          const phoneTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: phoneRef.current,
+              start: 'top top',
+              end: '+=1800',
+              scrub: true,
+              pin: mock,
+              pinSpacing: true,
+              markers: false,
+            },
+          })
+
+          const shift = Math.max(0, (chatList as HTMLElement).scrollHeight - (chatViewport as HTMLElement).clientHeight)
+          phoneTl.to(chatList, { y: -shift, ease: 'none', duration: 1 }, 0)
+
+          chatBubbles.forEach((bubble, i) => {
+            phoneTl.to(bubble, { opacity: 1, y: 0, ease: 'none', duration: 0.15 }, i * 0.14)
+          })
+
+          cleanupFns.push(() => {
+            phoneTl.scrollTrigger?.kill()
+            phoneTl.kill()
+          })
         }
       }
 
@@ -240,26 +287,10 @@ export default function LandingPage() {
       // Refresh ScrollTrigger after setup
       ;(gsap as any).ScrollTrigger?.refresh?.()
     }, 500)
-  }, [isLoaded, isGsapReady])
 
-  // Voice waveform data
-  const waveformPath = "M0,50 Q10,30 20,50 T40,50 T60,50 T80,50 T100,50 T120,50 T140,50 T160,50 T180,50 T200,50"
-
-  useEffect(() => {
-    if (!isLoaded || !isGsapReady) return
-
-    // Animate voice waveform
-    const waveform = document.querySelector('.voice-wave')
-    if (waveform) {
-      gsap.to(waveform, {
-        attr: {
-          d: "M0,50 Q10,20 20,50 T40,50 T60,50 T80,50 T100,50 T120,50 T140,50 T160,50 T180,50 T200,50"
-        },
-        duration: 0.3,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power1.inOut'
-      })
+    return () => {
+      clearTimeout(t)
+      cleanupFns.forEach((fn) => fn())
     }
   }, [isLoaded, isGsapReady])
 
@@ -562,7 +593,7 @@ export default function LandingPage() {
               Branded landing pages that feel alive
             </h2>
             <p className="text-white/70 leading-relaxed">
-              Swap venue backgrounds, drop in hero art, and let visitors tap “Talk with Agent” instantly. GSAP-driven parallax keeps the fold in motion without exposing the underlying stack.
+              Swap venue backgrounds, drop in hero art, and let visitors tap “Talk with Agent” instantly. Scroll reveals a living conversation between the visitor and the exhibit.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {["AI-spec hero images", "QR-first flows", "Stripe paywall ready", "Mobile-optimized"].map((item) => (
@@ -578,14 +609,68 @@ export default function LandingPage() {
             <div className="landing-mock glass-card w-full max-w-md mx-auto rounded-3xl p-4 relative overflow-hidden bg-white/10 border border-white/15"
                  style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.35)' }}>
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-black/20" />
-              <div className="relative aspect-[3/5] rounded-2xl overflow-hidden">
-                <Image
-                  src="/assets/ui/mobile-landing.png"
-                  alt="Mobile landing preview"
-                  fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  className="object-cover"
-                />
+              <div className="relative aspect-[3/5] rounded-2xl overflow-hidden bg-[#05060B] border border-white/10">
+                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+                <div className="relative z-10 px-5 pt-6 pb-4 border-b border-white/10 bg-black/10 backdrop-blur">
+                  <div className="text-center">
+                    <div className="text-[11px] tracking-[0.25em] uppercase text-white/50 mb-2">Visitor Experience</div>
+                    <div className="text-xl font-black text-white leading-tight">Mona Lisa</div>
+
+                    <div className="mt-3 flex items-end justify-center gap-1 h-6">
+                      {Array.from({ length: 18 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="ml-wave-bar w-1 rounded-full bg-gradient-to-t from-[var(--royal-violet)] to-[var(--electric-cyan)] opacity-80"
+                          style={{ height: `${8 + ((i * 7) % 14)}px`, transform: 'scaleY(0.6)' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ml-chat-viewport relative z-10 px-5 py-5 h-[calc(100%-150px)] overflow-hidden">
+                  <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#05060B] to-transparent pointer-events-none" />
+                  <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#05060B] to-transparent pointer-events-none" />
+
+                  <div className="ml-chat-list space-y-3 will-change-transform">
+                    {[
+                      { side: 'user', text: 'Why is your smile so mysterious?' },
+                      { side: 'ai', text: 'Because Leonardo painted me with sfumato — soft edges that let emotions shift as you look.' },
+                      { side: 'user', text: 'Were you meant to be happy?' },
+                      { side: 'ai', text: 'I am meant to be human. A smile that holds both warmth and distance.' },
+                      { side: 'user', text: 'What makes this painting feel alive?' },
+                      { side: 'ai', text: 'The gaze. The light. The unfinished certainty — your mind completes the story.' },
+                      { side: 'user', text: 'Is it true you have no eyebrows?' },
+                      { side: 'ai', text: 'Some say they faded, others say Leonardo left them out. Mystery is part of my job.' },
+                      { side: 'user', text: 'What should I notice next?' },
+                      { side: 'ai', text: 'Look at the landscape behind me — it is a world that doesn’t quite belong to ours.' },
+                    ].map((m, i) => (
+                      <div
+                        key={i}
+                        className={['ml-chat-bubble flex', m.side === 'user' ? 'justify-start' : 'justify-end'].join(' ')}
+                        style={{ willChange: 'transform, opacity' }}
+                      >
+                        <div
+                          className={[
+                            'max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm',
+                            m.side === 'user'
+                              ? 'bg-white/10 text-white rounded-bl-sm border border-white/10'
+                              : 'bg-gradient-to-r from-[var(--electric-cyan)] to-[var(--royal-violet)] text-black rounded-br-sm',
+                          ].join(' ')}
+                        >
+                          {m.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-6 pt-4 bg-gradient-to-t from-[#05060B] to-transparent">
+                  <div className="w-full py-4 rounded-2xl bg-white text-black font-black text-center text-sm shadow-[0_0_30px_rgba(255,255,255,0.08)]">
+                    Talk with Agent
+                  </div>
+                </div>
               </div>
               <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-gradient-to-br from-[var(--electric-cyan)]/30 to-[var(--royal-violet)]/20 rounded-full blur-2xl" />
             </div>
