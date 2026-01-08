@@ -1,18 +1,72 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
-import Lenis from 'lenis'
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
+import {
+  ArrowRight,
+  Check,
+  Cpu,
+  CreditCard,
+  Languages,
+  MessageSquare,
+  QrCode,
+  Smartphone,
+  Sparkles,
+  Zap,
+} from 'lucide-react'
+
+type Accent = 'cyan' | 'violet' | 'fuchsia' | 'slate'
+
+function accentToTextClass(accent: Accent) {
+  switch (accent) {
+    case 'cyan':
+      return 'text-cyan-400'
+    case 'violet':
+      return 'text-violet-400'
+    case 'fuchsia':
+      return 'text-fuchsia-400'
+    default:
+      return 'text-slate-300'
+  }
+}
+
+function accentToBgClass(accent: Accent) {
+  switch (accent) {
+    case 'cyan':
+      return 'bg-cyan-500/10'
+    case 'violet':
+      return 'bg-violet-500/10'
+    case 'fuchsia':
+      return 'bg-fuchsia-500/10'
+    default:
+      return 'bg-white/10'
+  }
+}
+
+function accentToBorderHoverClass(accent: Accent) {
+  switch (accent) {
+    case 'cyan':
+      return 'group-hover:border-cyan-500/40 hover:border-cyan-500/40'
+    case 'violet':
+      return 'group-hover:border-violet-500/40 hover:border-violet-500/40'
+    case 'fuchsia':
+      return 'group-hover:border-fuchsia-500/40 hover:border-fuchsia-500/40'
+    default:
+      return 'group-hover:border-white/20 hover:border-white/20'
+  }
+}
 
 export default function LandingPage() {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const sphereRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
+  const heroSphereRef = useRef<HTMLDivElement>(null)
   const headlineRef = useRef<HTMLHeadingElement>(null)
-  const scannerRef = useRef<HTMLDivElement>(null)
-  const phoneRef = useRef<HTMLDivElement>(null)
-  const qrRef = useRef<HTMLDivElement>(null)
+  const journeyRef = useRef<HTMLElement>(null)
+  const mobileRef = useRef<HTMLElement>(null)
+  const pricingRef = useRef<HTMLElement>(null)
+  const finalRef = useRef<HTMLElement>(null)
+
   const [activeTier, setActiveTier] = useState<number | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isGsapReady, setIsGsapReady] = useState(false)
@@ -26,92 +80,72 @@ export default function LandingPage() {
       if (!isCancelled) setIsGsapReady(true)
     })()
 
-    // Initialize Lenis smooth scroll
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    })
-
-    function raf(time: number) {
-      lenis.raf(time)
-      requestAnimationFrame(raf)
-    }
-
-    requestAnimationFrame(raf)
-
-    // Mark as loaded after a brief delay
     setTimeout(() => setIsLoaded(true), 100)
 
     return () => {
       isCancelled = true
-      lenis.destroy()
     }
   }, [])
 
   useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
-    // Hero Entrance Animation - Character by character reveal
     if (headlineRef.current) {
       const text = headlineRef.current.textContent || ''
       headlineRef.current.innerHTML = text
         .split('')
-        .map((char) => `<span class="inline-block opacity-0" style="will-change: transform">${char === ' ' ? '&nbsp;' : char}</span>`)
+        .map(
+          (char) =>
+            `<span class="inline-block opacity-0" style="will-change: transform">${char === ' ' ? '&nbsp;' : char}</span>`
+        )
         .join('')
 
       const chars = headlineRef.current.querySelectorAll('span')
-
       gsap.set(chars, { y: 50 })
       gsap.to(chars, {
         opacity: 1,
         y: 0,
-        duration: 0.8,
-        stagger: 0.02,
-        ease: 'expo.out',
-        delay: 0.5
+        duration: 0.9,
+        stagger: 0.015,
+        ease: 'power4.out',
+        delay: 0.15,
       })
     }
 
-    // Voice Sphere magnetic follow
     const handleMouseMove = (e: MouseEvent) => {
-      if (sphereRef.current) {
-        const rect = sphereRef.current.getBoundingClientRect()
-        const centerX = rect.left + rect.width / 2
-        const centerY = rect.top + rect.height / 2
+      if (!heroSphereRef.current) return
+      const rect = heroSphereRef.current.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      const deltaX = (e.clientX - centerX) * 0.08
+      const deltaY = (e.clientY - centerY) * 0.08
 
-        const deltaX = (e.clientX - centerX) * 0.1
-        const deltaY = (e.clientY - centerY) * 0.1
-
-        gsap.to(sphereRef.current, {
-          x: deltaX,
-          y: deltaY,
-          duration: 1.5,
-          ease: 'power2.out'
-        })
-      }
+      gsap.to(heroSphereRef.current, {
+        x: deltaX,
+        y: deltaY,
+        duration: 1.2,
+        ease: 'power2.out',
+      })
     }
 
     window.addEventListener('mousemove', handleMouseMove)
 
-    // Background particles
     const createParticles = () => {
       if (!heroRef.current) return
-
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 40; i++) {
         const particle = document.createElement('div')
-        particle.className = 'absolute w-1 h-1 bg-[var(--electric-cyan)] rounded-full opacity-20'
+        particle.className = 'absolute w-1 h-1 bg-cyan-400/40 rounded-full opacity-30'
         particle.style.left = `${Math.random() * 100}%`
-        particle.style.top = `${Math.random() * 100}%`
+        particle.style.top = `${60 + Math.random() * 40}%`
         heroRef.current.appendChild(particle)
 
         gsap.to(particle, {
-          y: -100,
+          y: -180,
           opacity: 0,
-          duration: 3 + Math.random() * 2,
+          duration: 4 + Math.random() * 2,
           repeat: -1,
           delay: Math.random() * 3,
-          ease: 'none'
+          ease: 'none',
         })
       }
     }
@@ -126,571 +160,530 @@ export default function LandingPage() {
   useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
-    // Small delay to ensure DOM is ready
-    setTimeout(() => {
-      // Scanner Transition Animation
-      if (scannerRef.current) {
-        const revealItems = scannerRef.current.querySelectorAll('.scan-card')
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: scannerRef.current,
-            start: 'top 80%',
-            end: 'bottom 60%',
-            scrub: 1,
-            markers: false,
-          }
-        })
-
-        revealItems.forEach((item, i) => {
-          tl.fromTo(item,
-            {
-              opacity: 0,
-              filter: 'blur(10px)',
-              scale: 0.92,
-              y: 50
-            },
-            {
-              opacity: 1,
-              filter: 'blur(0px)',
-              scale: 1,
-              y: 0,
-              duration: 0.6
-            },
-            i * 0.2
-          )
-        })
-      }
-
-      // Landing preview animation
-      if (phoneRef.current) {
-        const copy = phoneRef.current.querySelectorAll('.landing-copy > *')
-        const mock = phoneRef.current.querySelector('.landing-mock')
-
-        gsap.from(copy, {
-          opacity: 0,
-          y: 30,
-          stagger: 0.08,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: phoneRef.current,
-            start: 'top 70%',
-          }
-        })
-
-        if (mock) {
-          gsap.fromTo(mock,
-            { opacity: 0, y: 40, scale: 0.95 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: 1,
-              ease: 'power4.out',
-              scrollTrigger: {
-                trigger: phoneRef.current,
-                start: 'top 70%',
-              }
-            }
-          )
-        }
-      }
-
-      // QR Explosion Effect
-      if (qrRef.current) {
-        const qrImage = qrRef.current.querySelector('.qr-image')
-        const cta = qrRef.current.querySelector('.cta-button')
-
-        if (qrImage) {
-          gsap.fromTo(qrImage,
-            { scale: 0.7, opacity: 0, rotation: -10 },
-            {
-              scale: 1,
-              opacity: 1,
-              rotation: 0,
-              duration: 1.1,
-              ease: 'back.out(1.7)',
-              scrollTrigger: {
-                trigger: qrRef.current,
-                start: 'top 65%'
-              }
-            }
-          )
-        }
-
-        if (cta) {
-          gsap.fromTo(cta,
-            { scale: 0.8, opacity: 0 },
-            {
-              scale: 1,
-              opacity: 1,
-              duration: 1,
-              delay: 0.4,
-              ease: 'elastic.out(1, 0.5)',
-              scrollTrigger: {
-                trigger: qrRef.current,
-                start: 'top 60%'
-              }
-            }
-          )
-        }
-      }
-
-      // Refresh ScrollTrigger after setup
-      ;(gsap as any).ScrollTrigger?.refresh?.()
-    }, 500)
-  }, [isLoaded, isGsapReady])
-
-  // Voice waveform data
-  const waveformPath = "M0,50 Q10,30 20,50 T40,50 T60,50 T80,50 T100,50 T120,50 T140,50 T160,50 T180,50 T200,50"
-
-  useEffect(() => {
-    if (!isLoaded || !isGsapReady) return
-
-    // Animate voice waveform
-    const waveform = document.querySelector('.voice-wave')
-    if (waveform) {
-      gsap.to(waveform, {
-        attr: {
-          d: "M0,50 Q10,20 20,50 T40,50 T60,50 T80,50 T100,50 T120,50 T140,50 T160,50 T180,50 T200,50"
+    const sections = [journeyRef.current, mobileRef.current, pricingRef.current, finalRef.current].filter(Boolean) as HTMLElement[]
+    for (const section of sections) {
+      const items = section.querySelectorAll('[data-reveal]')
+      gsap.from(items, {
+        opacity: 0,
+        y: 24,
+        filter: 'blur(10px)',
+        duration: 0.9,
+        stagger: 0.08,
+        ease: 'power4.out',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 75%',
         },
-        duration: 0.3,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power1.inOut'
       })
     }
+
+    ;(gsap as any).ScrollTrigger?.refresh?.()
   }, [isLoaded, isGsapReady])
 
-  const tiers = [
+  const steps: Array<{
+    step: string
+    title: string
+    desc: string
+    accent: Accent
+    image: string
+    icon: React.ReactNode
+  }> = [
     {
-      name: 'Essential Voice',
-      icon: 'I',
-      price: '$99/mo',
-      features: ['Single language', '1,000 conversations/mo', 'Smart prompts', 'QR codes + landing'],
-      color: 'from-blue-400 to-blue-600'
+      step: '01',
+      title: 'Scan',
+      desc: 'Scan a glowing QR code at any physical exhibit.',
+      accent: 'cyan',
+      image: '/assets/exhibits/museum-scan.jpg',
+      icon: <QrCode size={24} />,
     },
     {
-      name: 'Multi-Language Pro',
-      icon: 'II',
-      price: '$299/mo',
-      features: ['50+ languages', '5,000 conversations/mo', 'Advanced analytics', 'Custom branding'],
-      color: 'from-[var(--electric-cyan)] to-[var(--royal-violet)]',
-      popular: true
+      step: '02',
+      title: 'Pay',
+      desc: 'Secure Stripe paywall for premium content.',
+      accent: 'violet',
+      image: '/assets/exhibits/paywall.jpg',
+      icon: <CreditCard size={24} />,
     },
     {
-      name: 'Enterprise',
-      icon: 'III',
-      price: 'Custom',
-      features: ['Unlimited everything', 'Dedicated support', 'White label', 'API + SSO'],
-      color: 'from-purple-500 to-pink-600'
-    }
+      step: '03',
+      title: 'Talk',
+      desc: 'Conversational AI agent for that specific exhibit.',
+      accent: 'fuchsia',
+      image: '/assets/exhibits/live-call.jpg',
+      icon: <MessageSquare size={24} />,
+    },
   ]
 
-  const scanSteps = [
+  const tiers: Array<{
+    tier: string
+    name: string
+    price: string
+    desc: string
+    features: string[]
+    accent: Accent
+    popular?: boolean
+  }> = [
     {
-      title: 'Scan',
-      desc: 'Visitors tap a glowing QR and launch the agent in seconds.',
-      image: '/assets/exhibits/museum-scan.jpg'
+      tier: 'I',
+      name: 'Boutique',
+      price: '$499',
+      desc: 'Perfect for local galleries.',
+      features: ['5 Agents', '1k Conversations', 'Basic Knowledge'],
+      accent: 'slate',
     },
     {
-      title: 'Pay',
-      desc: 'Optional Stripe paywall unlocks premium stories and tours.',
-      image: '/assets/exhibits/paywall.jpg'
+      tier: 'II',
+      name: 'Professional',
+      price: '$1,299',
+      desc: 'Standard for museums.',
+      features: ['20 Agents', '10k Conversations', 'All Languages'],
+      accent: 'cyan',
+      popular: true,
     },
     {
-      title: 'Talk',
-      desc: 'Real-time voice chat tailored to the exhibit and venue brand.',
-      image: '/assets/exhibits/live-call.jpg'
-    }
+      tier: 'III',
+      name: 'Enterprise',
+      price: 'Custom',
+      desc: 'Unlimited scale for landmarks.',
+      features: ['Unlimited Agents', 'Unlimited Convos', '3D Voice Identity'],
+      accent: 'violet',
+    },
   ]
 
   return (
-    <div className="min-h-screen bg-[#05060B] text-white overflow-x-hidden">
-      {/* Fixed Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass backdrop-blur-lg bg-white/70 border-b border-white/30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold gradient-text tracking-tight">Voicify It</div>
-          <div className="flex gap-3 items-center">
-            <Link href="/auth/signin" className="text-sm text-[var(--text-secondary)] hover:text-[var(--electric-cyan)] transition-colors font-semibold">
+    <div className="relative bg-[#020617] text-white overflow-x-hidden">
+      <style jsx global>{`
+        @keyframes cta-pulse-glow {
+          0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.35); }
+          70% { box-shadow: 0 0 0 22px rgba(34, 211, 238, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+        }
+        .cta-glow-animate { animation: cta-pulse-glow 2s infinite; }
+
+        @keyframes float-slow {
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          50% { transform: translate3d(0, -10px, 0); }
+        }
+        .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.25; transform: scale(1); }
+          50% { opacity: 0.45; transform: scale(1.05); }
+        }
+        .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+
+        @keyframes wave {
+          0%, 100% { transform: scaleY(0.35); opacity: 0.65; }
+          50% { transform: scaleY(1); opacity: 1; }
+        }
+        .animate-wave { animation: wave 1.4s ease-in-out infinite; transform-origin: bottom; }
+      `}</style>
+
+      {/* Top Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#020617]/60 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg" />
+            <span className="text-xl font-black tracking-tighter">
+              Voicify<span className="text-cyan-400">It</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/auth/signin"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 hover:text-cyan-300 transition-colors px-4 py-2"
+            >
               Sign In
             </Link>
             <Link href="/auth/signup">
-              <button className="btn-primary px-5 py-2 text-sm shadow-[0_0_25px_rgba(0,245,255,0.35)]">
-                Launch an Agent
+              <button className="group bg-white text-black px-6 py-3 rounded-2xl font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_40px_rgba(34,211,238,0.18)] flex items-center gap-2">
+                Launch Live Demo
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Section 1: Hero Command Deck */}
-      <section
-        ref={heroRef}
-        className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24"
-        style={{
-          willChange: 'transform',
-          background: 'radial-gradient(circle at 20% 20%, rgba(0,245,255,0.08), transparent 30%), radial-gradient(circle at 80% 0%, rgba(138,43,226,0.12), transparent 35%), linear-gradient(135deg, #0a0c14 0%, #0b0f1f 50%, #0a0c14 100%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradientShift 15s ease infinite'
-        }}
-      >
-        {/* Overlay for readability */}
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
-        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'url(/assets/backgrounds/neural-grid.png)', backgroundSize: 'cover', mixBlendMode: 'screen' }} />
+      {/* Hero */}
+      <section ref={heroRef} className="relative h-screen flex items-center overflow-hidden pt-24">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#020617] to-[#01040f]" />
+        <div className="absolute inset-0 opacity-40 mix-blend-screen" style={{ backgroundImage: "url('/assets/backgrounds/neural-grid.png')", backgroundSize: 'cover' }} />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-cyan-500/10 blur-[120px]" />
+        <div className="absolute -top-44 left-1/3 w-[900px] h-[900px] bg-violet-500/10 blur-[120px]" />
 
-        {/* Main content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-          <div className="text-left">
-            <div className="inline-flex items-center gap-2 glass-card mb-6 px-4 py-2 bg-white/10 border border-white/20">
-              <span className="w-2 h-2 bg-[var(--electric-cyan)] rounded-full animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)] font-semibold">Command your exhibits</span>
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center w-full relative z-10">
+          <div className="space-y-10 z-20" data-reveal>
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-cyan-400 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+              <Sparkles size={14} />
+              Intelligence for Physical Spaces
             </div>
 
-            <h1
-              ref={headlineRef}
-              className="text-5xl md:text-7xl font-black mb-6 leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,245,255,0.15)]"
-              style={{ willChange: 'transform' }}
-            >
-              AI Voice Agents
-              <br />
-              for Museums & Events
+            <h1 ref={headlineRef} className="text-6xl md:text-[5.5rem] font-extrabold tracking-tighter leading-[0.9] text-white">
+              AI Voice Agents for Museums & Events
             </h1>
 
-            <p className="text-lg md:text-xl text-white/80 font-medium mb-8 max-w-2xl">
-              Scan, pay, and start a live conversation with every exhibit. Voicify It handles the voice, the paywall, and the branded landing page.
+            <p className="text-xl text-slate-400 max-w-lg font-light leading-relaxed opacity-80">
+              Deploy human-like curated voices that bring exhibits to life. Immersive, multilingual, and ready to converse.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/auth/signup">
-                <button className="btn-primary inline-flex items-center gap-3 px-8 py-4 text-base shadow-[0_0_40px_rgba(0,245,255,0.45)]">
-                  <span>Build an Agent</span>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </button>
-              </Link>
+            <div className="flex flex-col sm:flex-row items-center gap-8 pt-4">
               <Link href="/visitor">
-                <button className="btn-glass inline-flex items-center gap-3 px-8 py-4 text-base border border-white/30 bg-white/10 text-white">
-                  <span>See the Demo</span>
+                <button className="group relative bg-white text-black px-12 py-6 rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_50px_rgba(34,211,238,0.2)] flex items-center gap-3 overflow-hidden">
+                  Launch Live Demo
+                  <ArrowRight className="group-hover:translate-x-2 transition-transform" />
                 </button>
               </Link>
-            </div>
-          </div>
 
-          <div className="relative">
-            <div
-              ref={sphereRef}
-              className="hero-card relative glass-card bg-white/10 border border-white/20 rounded-3xl p-6 overflow-hidden"
-              style={{ boxShadow: '0 30px 80px rgba(0,0,0,0.4)', willChange: 'transform' }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,245,255,0.08)] via-[rgba(138,43,226,0.05)] to-transparent pointer-events-none" />
-              <div className="relative aspect-square w-full max-w-[420px] mx-auto">
-                <Image
-                  src="/assets/hero/voice-sphere-3d.png"
-                  alt="Voicify It voice sphere"
-                  fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  className="object-contain drop-shadow-[0_0_45px_rgba(0,245,255,0.35)]"
-                  priority
-                />
-              </div>
-              <div className="mt-6 text-center text-sm text-white/70">
-                Parallax and GSAP-driven entrance animation keep the hero kinetic.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce z-10">
-          <div className="w-6 h-10 rounded-full border-2 border-[var(--electric-cyan)] border-opacity-70 flex items-start justify-center p-2 bg-white/50">
-            <div className="w-1 h-3 bg-[var(--electric-cyan)] rounded-full" />
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2: Scan • Pay • Talk */}
-      <section
-        ref={scannerRef}
-        className="relative min-h-screen flex items-center justify-center py-28 px-4 bg-gradient-to-b from-[#0b0f1f] via-[#0f152a] to-[#0b0f1f]"
-        style={{
-          backgroundImage: 'linear-gradient(180deg, rgba(0,245,255,0.08), rgba(138,43,226,0.05))'
-        }}
-      >
-        <div className="absolute inset-0 bg-[url('/assets/backgrounds/neural-grid.png')] opacity-30 mix-blend-screen" />
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 text-white">
-            Scan • Pay • Talk
-          </h2>
-          <p className="text-center text-white/70 max-w-2xl mx-auto mb-16">
-            Every visitor journey is a kinetic story: a glowing QR, a branded paywall, and a live AI voice that knows the exhibit by heart.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {scanSteps.map((step, idx) => (
-              <div
-                key={step.title}
-                className="scan-card glass-card bg-white/5 border border-white/10 rounded-2xl overflow-hidden group relative"
-                style={{ willChange: 'transform, opacity, filter' }}
+              <a
+                href="#journey"
+                className="bg-white/5 backdrop-blur-md border border-white/10 text-white/70 px-8 py-6 rounded-2xl font-bold hover:bg-white/10 transition-all text-sm uppercase tracking-widest"
               >
-                <div className="relative h-56 w-full overflow-hidden">
+                Learn More
+              </a>
+            </div>
+          </div>
+
+          <div className="relative hidden lg:flex justify-center items-center h-full" data-reveal>
+            <div className="relative w-[500px] h-[500px]">
+              <div className="absolute inset-0 opacity-30 blur-[100px] bg-gradient-to-tr from-cyan-500 to-violet-500 animate-pulse-slow" />
+              <div className="absolute inset-[-40px] rounded-full border border-white/5 animate-[spin_30s_linear_infinite]" />
+              <div className="absolute inset-[-20px] rounded-full border border-cyan-500/10 animate-[spin_20s_linear_infinite_reverse]" />
+
+              <div
+                ref={heroSphereRef}
+                className="relative z-10 w-full h-full rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center border border-white/10 overflow-hidden shadow-[inset_0_0_100px_rgba(255,255,255,0.05)]"
+              >
+                <div className="absolute inset-0">
                   <Image
-                    src={step.image}
-                    alt={step.title}
+                    src="/assets/hero/voice-sphere-3d.png"
+                    alt="AI Voice Sphere"
                     fill
-                    sizes="(max-width: 768px) 100vw, 360px"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    priority
+                    sizes="500px"
+                    className="object-cover opacity-80 mix-blend-screen"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                  <div className="absolute bottom-3 left-3 px-3 py-1 text-xs uppercase tracking-[0.25em] text-white/80 bg-black/40 rounded-full border border-white/10">
-                    {`0${idx + 1}`}
-                  </div>
-                </div>
-                <div className="p-6 space-y-3">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[var(--electric-cyan)] shadow-[0_0_10px_rgba(0,245,255,0.7)]" />
-                    {step.title}
-                  </h3>
-                  <p className="text-white/70 text-sm leading-relaxed">{step.desc}</p>
-                </div>
-                <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-[var(--electric-cyan)]/60 transition-colors duration-300 shadow-[0_0_20px_rgba(0,245,255,0.25)]" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: Agent Tier Bento Grid - Purple/pink gradient */}
-      <section
-        className="relative py-32 px-4"
-        style={{
-          background: 'radial-gradient(circle at 15% 20%, rgba(0,245,255,0.10), transparent 35%), radial-gradient(circle at 80% 10%, rgba(138,43,226,0.12), transparent 40%), linear-gradient(135deg, #0a0c14 0%, #0b0f1f 55%, #0a0c14 100%)'
-        }}
-      >
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-[url('/assets/backgrounds/neural-grid.png')] opacity-20 mix-blend-screen" />
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-6">
-            Choose Your <span className="gradient-text drop-shadow-lg">Agent Tier</span>
-          </h2>
-          <p className="text-center text-white/70 max-w-2xl mx-auto mb-16">
-            Start simple, go multilingual, or unlock advanced workflows across email, SMS, and social.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {tiers.map((tier, i) => (
-              <div
-                key={i}
-                onMouseEnter={() => setActiveTier(i)}
-                onMouseLeave={() => setActiveTier(null)}
-                className={`relative glass-card cursor-pointer transition-all duration-500 bg-white/5 border border-white/10 ${
-                  activeTier === null || activeTier === i
-                    ? 'opacity-100 scale-100'
-                    : 'opacity-30 scale-95'
-                } ${activeTier === i ? 'scale-105 shadow-2xl' : ''}`}
-                style={{ willChange: 'transform, opacity' }}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[var(--electric-cyan)] to-[var(--royal-violet)] text-white text-sm font-bold rounded-full shadow-lg">
-                    Most Popular
-                  </div>
-                )}
-
-                <div className="text-6xl mb-4 flex justify-center">
-                  <div className={`relative ${tier.name === 'Multi-Language Pro' ? 'orbit-container' : ''}`}>
-                    {tier.icon}
-                    {tier.name === 'Multi-Language Pro' && (
-                      <div className="absolute inset-0">
-                        {['EN', 'ES', 'FR', 'JP'].map((flag, idx) => (
-                          <span
-                            key={idx}
-                            className="absolute text-2xl"
-                            style={{
-                              animation: `orbit 10s linear infinite`,
-                              animationDelay: `${idx * 2.5}s`,
-                              transformOrigin: '50px 50px'
-                            }}
-                          >
-                            {flag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
-                <h3 className="text-2xl font-bold mb-2 text-center text-white">{tier.name}</h3>
-                <div className={`text-4xl font-bold mb-6 text-center bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
-                  {tier.price}
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-violet-500/10 z-10 pointer-events-none" />
 
-                <ul className="space-y-3">
-                  {tier.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-white/75">
-                      <svg className="w-5 h-5 text-[var(--electric-cyan)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feature}
-                    </li>
+                <div className="relative flex items-center gap-2 h-32 z-20 pointer-events-none">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 bg-gradient-to-t from-violet-600 to-cyan-400 rounded-full animate-wave"
+                      style={{ animationDelay: `${i * 0.1}s`, animationDuration: `${1 + (i % 3) * 0.15}s` }}
+                    />
                   ))}
-                </ul>
-
-                <button className="w-full mt-6 py-3 rounded-xl font-semibold border border-white/20 bg-white/10 text-white hover:border-[var(--electric-cyan)]/50 hover:shadow-[0_0_25px_rgba(0,245,255,0.25)] transition-all">
-                  Get Started
-                </button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visitor Journey */}
+      <section id="journey" ref={journeyRef} className="relative py-40 overflow-hidden">
+        <div className="absolute inset-0 opacity-25 mix-blend-screen" style={{ backgroundImage: "url('/assets/backgrounds/neural-grid.png')", backgroundSize: 'cover' }} />
+
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-24 space-y-6" data-reveal>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tight text-white">The Visitor Journey</h2>
+            <p className="text-slate-500 font-light text-xl max-w-2xl mx-auto">Designed for physical worlds. Built for effortless exploration.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((s) => (
+              <StepCard key={s.step} {...s} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Section 4: Landing Preview & Voice Flow */}
-      <section
-        ref={phoneRef}
-        className="relative min-h-screen flex items-center justify-center py-24 px-4 bg-gradient-to-br from-[#0b1224] via-[#0f1a34] to-[#0b1224]"
-      >
-        <div className="absolute inset-0 bg-[url('/assets/backgrounds/neural-grid.png')] opacity-25 mix-blend-screen" />
+      {/* Mobile Experience */}
+      <section ref={mobileRef} className="relative py-40 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="space-y-12 order-2 lg:order-1" data-reveal>
+            <div className="space-y-6">
+              <h2 className="text-5xl font-black tracking-tight">The Mobile Experience</h2>
+              <p className="text-slate-400 font-light text-xl leading-relaxed">
+                This doesn&apos;t feel like a webpage — it feels like an extension of the exhibit itself.
+              </p>
+            </div>
 
-        <div className="relative z-10 w-full max-w-6xl grid md:grid-cols-2 gap-10 items-center">
-          <div className="landing-copy space-y-4 text-white">
-            <h3 className="text-sm uppercase tracking-[0.3em] text-white/60">Landing Page Preview</h3>
-            <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-              Branded landing pages that feel alive
-            </h2>
-            <p className="text-white/70 leading-relaxed">
-              Swap venue backgrounds, drop in hero art, and let visitors tap “Talk with Agent” instantly. GSAP-driven parallax keeps the fold in motion without exposing the underlying stack.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {["AI-spec hero images", "QR-first flows", "Stripe paywall ready", "Mobile-optimized"].map((item) => (
-                <div key={item} className="glass-card bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-[var(--electric-cyan)] rounded-full shadow-[0_0_12px_rgba(0,245,255,0.7)]" />
-                  <span className="text-sm text-white/80">{item}</span>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <FeatureCard icon={<Cpu size={20} />} accent="cyan" title="AI-Spec Imagery" desc="Every agent features custom visuals that match the exhibit aesthetic." />
+              <FeatureCard icon={<Languages size={20} />} accent="violet" title="Instant Multi-Language" desc="Detects visitor language for a localized experience." />
+              <FeatureCard icon={<Zap size={20} />} accent="fuchsia" title="QR-First Flow" desc="Optimized for lightning-fast loading over venue Wi‑Fi." />
+              <FeatureCard icon={<Smartphone size={20} />} accent="slate" title="No App Required" desc="Runs entirely in the browser using high-performance Web Audio." />
             </div>
           </div>
 
-          <div className="relative">
-            <div className="landing-mock glass-card w-full max-w-md mx-auto rounded-3xl p-4 relative overflow-hidden bg-white/10 border border-white/15"
-                 style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.35)' }}>
-              <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-black/20" />
-              <div className="relative aspect-[3/5] rounded-2xl overflow-hidden">
-                <Image
-                  src="/assets/ui/mobile-landing.png"
-                  alt="Mobile landing preview"
-                  fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  className="object-cover"
-                />
+          <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end" data-reveal>
+            <div className="relative w-[320px] h-[640px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden animate-float-slow">
+              <div className="absolute inset-0 bg-gradient-to-b from-[#020617] to-slate-900" />
+              <div className="relative h-full flex flex-col p-6 pt-12 space-y-6">
+                <div className="h-48 rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative">
+                  <Image
+                    src="/assets/exhibits/museum-scan.jpg"
+                    alt="Exhibit hero"
+                    fill
+                    sizes="320px"
+                    className="object-cover opacity-80"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-cyan-500/20 rounded-full" />
+                  <div className="h-8 w-full bg-white/10 rounded-lg" />
+                  <div className="h-24 w-full bg-white/5 rounded-xl" />
+                </div>
+                <div className="mt-auto pb-8">
+                  <div className="w-full py-5 rounded-2xl bg-white text-black font-black text-center text-sm shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                    Talk with Agent
+                  </div>
+                </div>
               </div>
-              <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-gradient-to-br from-[var(--electric-cyan)]/30 to-[var(--royal-violet)]/20 rounded-full blur-2xl" />
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-6 bg-slate-800 rounded-full" />
             </div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-violet-500/10 blur-[100px] -z-10" />
           </div>
         </div>
       </section>
 
-      {/* Section 5: QR CTA */}
-      <section
-        ref={qrRef}
-        className="relative min-h-screen flex items-center justify-center py-32 px-4"
-        style={{
-          background: 'linear-gradient(135deg, #0f1628 0%, #101c33 40%, #0f1628 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'gradientShift 20s ease infinite'
-        }}
-      >
-        <div className="absolute inset-0 bg-[url('/assets/backgrounds/neural-grid.png')] opacity-20 mix-blend-screen" />
-
-        <div className="relative max-w-4xl mx-auto text-center z-10">
-          <div className="qr-image relative w-64 h-64 mx-auto mb-12">
-            <Image
-              src="/assets/icons/qr-artistic.png"
-              alt="Artistic QR code"
-              fill
-              sizes="256px"
-              className="object-contain drop-shadow-[0_0_40px_rgba(0,245,255,0.45)]"
-            />
+      {/* Pricing */}
+      <section ref={pricingRef} className="relative py-40 bg-[#020617]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20 space-y-6" data-reveal>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tight text-white">Choose Your Agent Tier</h2>
+            <p className="text-slate-500 font-light text-xl max-w-2xl mx-auto">Tailored intelligence for any venue.</p>
           </div>
 
-          <div className="cta-button opacity-0">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg">
-              Ready to <span className="gradient-text">Give Voice</span> to Your Exhibits?
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 group/pricing">
+            {tiers.map((tier, idx) => (
+              <PricingCard
+                key={tier.tier}
+                tier={tier.tier}
+                name={tier.name}
+                price={tier.price}
+                desc={tier.desc}
+                features={tier.features}
+                accent={tier.accent}
+                popular={tier.popular}
+                index={idx}
+                activeTier={activeTier}
+                setActiveTier={setActiveTier}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section ref={finalRef} className="relative py-60 overflow-hidden flex items-center justify-center text-center">
+        <div className="absolute inset-0 opacity-25 mix-blend-screen" style={{ backgroundImage: "url('/assets/backgrounds/neural-grid.png')", backgroundSize: 'cover' }} />
+
+        <div className="max-w-4xl mx-auto px-6 space-y-16 relative z-10">
+          <div className="relative group cursor-pointer inline-block" data-reveal>
+            <div className="absolute inset-[-40px] bg-cyan-500/20 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="relative bg-white/5 border border-cyan-500/20 p-12 rounded-[3.5rem] shadow-[0_0_80px_rgba(34,211,238,0.1)] group-hover:scale-105 transition-transform duration-700">
+              <div className="w-48 h-48 bg-[#020617] rounded-3xl border border-white/10 flex items-center justify-center overflow-hidden">
+                <div className="p-4 bg-white/5 rounded-2xl animate-pulse">
+                  <QrCode size={120} className="text-cyan-400 opacity-60" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8" data-reveal>
+            <h2 className="text-7xl md:text-[8rem] font-black tracking-tighter text-white leading-[0.8]">
+              Let your
+              <br />
+              exhibits speak.
             </h2>
-            <p className="text-lg text-white/80 font-medium mb-10 max-w-2xl mx-auto">
-              Launch a QR-to-voice journey that feels intentional, branded, and alive for every venue.
-            </p>
+            <p className="text-slate-500 text-xl font-light">Join the future of cultural exploration.</p>
+          </div>
+
+          <div className="relative inline-block" data-reveal>
             <Link href="/auth/signup">
-              <button
-                className="btn-primary text-lg px-10 py-5 shadow-2xl"
-                style={{
-                  boxShadow: '0 0 60px rgba(0,245,255,0.6)',
-                  animation: 'pulse 2s ease-in-out infinite'
-                }}
-              >
-                Launch Your First Agent
+              <button className="group relative bg-white text-black px-16 py-8 rounded-3xl font-black text-2xl hover:bg-cyan-400 transition-all flex items-center gap-4 mx-auto shadow-2xl z-10 cta-glow-animate">
+                Launch Experience <ArrowRight className="group-hover:translate-x-2 transition-transform" />
               </button>
             </Link>
-            <p className="text-sm text-white/70 mt-6 font-medium">
-              No credit card required · 14-day free trial · Cancel anytime
-            </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-4 bg-[#05060B]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-2xl font-bold gradient-text">Voicify It</div>
-          <div className="text-white/60 text-sm">
-            (c) 2024 Voicify It. All rights reserved.
+      <footer className="relative py-20 border-t border-white/5 bg-[#01040f]">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg" />
+            <span className="text-xl font-black tracking-tighter">
+              Voicify<span className="text-cyan-400">It</span>
+            </span>
           </div>
-          <div className="flex gap-6">
-            <Link href="/auth/signin" className="text-white/70 hover:text-[var(--electric-cyan)] transition-colors">
-              Sign In
-            </Link>
-            <Link href="/exhibits" className="text-white/70 hover:text-[var(--electric-cyan)] transition-colors">
-              Dashboard
-            </Link>
-          </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700">(c) 2025 Voicify It Systems</p>
         </div>
       </footer>
+    </div>
+  )
+}
 
-      {/* CSS for animations */}
-      <style jsx>{`
-        @keyframes orbit {
-          from {
-            transform: rotate(0deg) translateX(60px) rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg) translateX(60px) rotate(-360deg);
-          }
-        }
+function FeatureCard({
+  icon,
+  accent,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode
+  accent: Accent
+  title: string
+  desc: string
+}) {
+  return (
+    <div className="space-y-4 p-6 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/5">
+      <div className={`w-10 h-10 rounded-xl ${accentToBgClass(accent)} flex items-center justify-center ${accentToTextClass(accent)}`}>
+        {icon}
+      </div>
+      <h4 className="font-bold text-lg">{title}</h4>
+      <p className="text-slate-500 text-sm">{desc}</p>
+    </div>
+  )
+}
 
-        @keyframes pulse {
-          0%, 100% {
-            box-shadow: 0 0 40px rgba(0,245,255,0.6);
-          }
-          50% {
-            box-shadow: 0 0 80px rgba(0,245,255,0.9);
-          }
-        }
+function StepCard({
+  icon,
+  step,
+  title,
+  desc,
+  image,
+  accent,
+}: {
+  icon: React.ReactNode
+  step: string
+  title: string
+  desc: string
+  image: string
+  accent: Accent
+}) {
+  return (
+    <div
+      className={`group bg-white/5 backdrop-blur-xl p-1 rounded-[2.5rem] border border-white/5 transition-all duration-500 hover:-translate-y-4 hover:bg-white/[0.07] ${accentToBorderHoverClass(accent)}`}
+      data-reveal
+    >
+      <div className="p-8 space-y-8">
+        <div className="relative aspect-[4/3] rounded-3xl bg-black/40 overflow-hidden border border-white/5">
+          <Image
+            src={image}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, 420px"
+            className="object-cover opacity-70 group-hover:opacity-85 group-hover:scale-105 transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
+          <div className={`absolute top-0 right-0 w-32 h-32 ${accentToBgClass(accent)} blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+        </div>
 
-        @keyframes gradientShift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-      `}</style>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center transition-all ${accentToTextClass(accent)} group-hover:bg-white/10`}>
+              {icon}
+            </div>
+            <span className="text-4xl font-black text-white/10 tracking-tighter">{step}</span>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-white group-hover:translate-x-1 transition-transform">{title}</h3>
+            <p className="text-slate-400 font-light leading-relaxed text-sm">{desc}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PricingCard({
+  tier,
+  name,
+  price,
+  desc,
+  features,
+  accent,
+  popular,
+  index,
+  activeTier,
+  setActiveTier,
+}: {
+  tier: string
+  name: string
+  price: string
+  desc: string
+  features: string[]
+  accent: Accent
+  popular?: boolean
+  index: number
+  activeTier: number | null
+  setActiveTier: (i: number | null) => void
+}) {
+  const isActive = activeTier === null || activeTier === index
+  return (
+    <div
+      onMouseEnter={() => setActiveTier(index)}
+      onMouseLeave={() => setActiveTier(null)}
+      className={[
+        'relative group/card bg-white/5 backdrop-blur-xl rounded-[3rem] p-10 border transition-all duration-700',
+        popular ? 'border-cyan-500/40' : 'border-white/5',
+        'hover:scale-[1.05] hover:z-20 lg:group-hover/pricing:opacity-40 hover:!opacity-100 lg:group-hover/pricing:scale-95',
+        isActive ? 'opacity-100' : 'opacity-40',
+      ].join(' ')}
+      data-reveal
+    >
+      {popular && (
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.2em] px-6 py-1.5 rounded-full shadow-lg shadow-cyan-500/40">
+          Most Popular
+        </div>
+      )}
+
+      <div className="relative flex flex-col items-center mb-10">
+        <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+          {popular && (
+            <div className="absolute inset-[-40px] animate-[spin_10s_linear_infinite] pointer-events-none">
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-cyan-400/60 bg-black/40 px-2 rounded-full border border-cyan-500/20">
+                EN
+              </span>
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-400/60 bg-black/40 px-2 rounded-full border border-violet-500/20">
+                ES
+              </span>
+            </div>
+          )}
+          <div className={`text-6xl font-black italic tracking-tighter animate-float-slow ${accentToTextClass(accent)}`}>
+            {tier}
+          </div>
+        </div>
+        <h3 className="text-3xl font-black text-white mb-2">{name}</h3>
+        <p className="text-slate-500 text-sm mb-4">{desc}</p>
+        <div className="flex items-baseline gap-1 text-white">
+          <span className="text-4xl font-extrabold">{price === 'Custom' ? 'Custom' : price}</span>
+          {price !== 'Custom' && <span className="text-slate-500 text-sm">/mo</span>}
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-10">
+        {features.map((f, i) => (
+          <div key={i} className="flex gap-3 items-center text-sm text-slate-300">
+            <Check size={16} className={accentToTextClass(accent)} />
+            {f}
+          </div>
+        ))}
+      </div>
+
+      <button
+        className={[
+          'w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all',
+          popular ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20 hover:bg-white' : 'bg-white/5 border border-white/10 text-white hover:bg-white/10',
+        ].join(' ')}
+      >
+        Select Tier {tier}
+      </button>
     </div>
   )
 }
