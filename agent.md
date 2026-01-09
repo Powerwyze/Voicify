@@ -40,8 +40,8 @@ useEffect(() => {
 ## Nano Banana Asset Tasks (home-first; animated or photoreal as noted)
 Save assets under `public/assets/`. Animated variants are preferred when supported; always include a static fallback.
 
-1) Hero Voice Sphere — `public/assets/hero/voice-sphere-3d.png` (1200x1200, transparent)
-Prompt: 3D glass/data sphere with Electric Cyan → Royal Violet gradient, rim-lit shards, particle halo, subtle inner pulse; high detail; transparent PNG. Animated alt: slow rotate/pulse.
+1) Hero Orb Animation (no image needed)
+Prompt: Procedural/animated hero orb (CSS/GSAP) with Electric Cyan + Royal Violet glow, subtle scanlines + sheen pass, and a circular spectrum ring that breathes.
 
 2) QR Scan in Museum — `public/assets/exhibits/museum-scan.png` (1200x800)
 Prompt: Photoreal art museum; visitor scanning a QR beside a Renaissance painting; QR glows Electric Cyan; warm cinematic lighting, shallow depth.
@@ -88,7 +88,7 @@ Priority for homepage impact: 1 → 4 → 10 → 2 → 8 → 7 → 3 → 5 → 6
 
 ## File Map (suggested)
 ```
-public/assets/hero/voice-sphere-3d.png
+public/assets/hero/voice-sphere-3d.png (optional fallback)
 public/assets/exhibits/museum-scan.png
 public/assets/exhibits/paywall.png
 public/assets/exhibits/live-call.png

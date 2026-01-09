@@ -52,6 +52,8 @@ export default function LandingPage() {
   useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
+    let heroSpectrumTween: gsap.core.Tween | null = null
+
     // Hero Entrance Animation - Character by character reveal
     if (headlineRef.current) {
       const text = headlineRef.current.textContent || ''
@@ -118,8 +120,25 @@ export default function LandingPage() {
 
     createParticles()
 
+    const heroSpectrumBars = sphereRef.current?.querySelectorAll('.hero-spectrum-bar')
+    if (heroSpectrumBars?.length) {
+      gsap.set(heroSpectrumBars, { transformOrigin: '50% 100%', scaleY: 0.35 })
+      heroSpectrumTween = gsap.to(heroSpectrumBars, {
+        keyframes: [
+          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
+          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
+          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
+        ],
+        stagger: { each: 0.012, from: 'random' },
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      })
+    }
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
+      heroSpectrumTween?.kill()
     }
   }, [isLoaded, isGsapReady])
 
@@ -445,14 +464,41 @@ export default function LandingPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,245,255,0.08)] via-[rgba(138,43,226,0.05)] to-transparent pointer-events-none" />
               <div className="relative aspect-square w-full max-w-[420px] mx-auto">
-                <Image
-                  src="/assets/hero/voice-sphere-3d.png"
-                  alt="Voicify It voice sphere"
-                  fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  className="object-contain drop-shadow-[0_0_45px_rgba(0,245,255,0.35)]"
-                  priority
-                />
+                <div className="absolute inset-0 grid place-items-center">
+                  <div className="relative w-[92%] h-[92%] rounded-full">
+                    <div className="absolute inset-[-10%] rounded-full bg-[conic-gradient(from_90deg,rgba(0,245,255,0.0),rgba(0,245,255,0.25),rgba(138,43,226,0.25),rgba(0,245,255,0.0))] blur-2xl opacity-60 animate-[spin_18s_linear_infinite]" />
+                    <div className="absolute inset-0 rounded-full border border-white/10 bg-white/5 overflow-hidden shadow-[0_0_60px_rgba(0,245,255,0.18)]">
+                      <div
+                        className="absolute inset-0 opacity-95"
+                        style={{
+                          background:
+                            'radial-gradient(circle at 28% 28%, rgba(0,245,255,0.35), transparent 55%), radial-gradient(circle at 72% 68%, rgba(138,43,226,0.26), transparent 58%), radial-gradient(circle at 50% 50%, rgba(255,255,255,0.10), transparent 60%)',
+                        }}
+                      />
+                      <div className="absolute inset-0 opacity-50 mix-blend-screen bg-[radial-gradient(circle_at_50%_50%,rgba(0,245,255,0.15),transparent_55%)] animate-[sphereBreath_5.5s_ease-in-out_infinite]" />
+                      <div className="absolute inset-0 opacity-30 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.18),transparent)] animate-[sheen_6s_ease-in-out_infinite]" />
+                    </div>
+
+                    <div className="absolute inset-0 rounded-full">
+                      {[...Array(72)].map((_, i) => (
+                        <span
+                          key={i}
+                          className="hero-spectrum-bar absolute left-1/2 top-1/2 w-[2px] h-4 rounded-full"
+                          style={{
+                            transform: `translate(-50%, -50%) rotate(${i * (360 / 72)}deg) translateY(-47%)`,
+                            background: i % 3 === 0 ? 'var(--electric-cyan)' : 'var(--royal-violet)',
+                            opacity: 0.85,
+                            filter: 'drop-shadow(0 0 12px rgba(0,245,255,0.25))',
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="absolute inset-[18%] rounded-full border border-white/10 bg-black/30 backdrop-blur-sm grid place-items-center">
+                      <div className="text-xs uppercase tracking-[0.35em] text-white/60">Listening</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="mt-6 text-center text-sm text-white/70">
                 Parallax and GSAP-driven entrance animation keep the hero kinetic.
@@ -823,6 +869,34 @@ export default function LandingPage() {
           }
           100% {
             background-position: 0% 50%;
+          }
+        }
+
+        @keyframes sphereBreath {
+          0%, 100% {
+            transform: scale(0.98);
+            opacity: 0.35;
+          }
+          50% {
+            transform: scale(1.02);
+            opacity: 0.65;
+          }
+        }
+
+        @keyframes sheen {
+          0% {
+            transform: translateX(-60%) rotate(12deg);
+            opacity: 0;
+          }
+          20% {
+            opacity: 0.25;
+          }
+          60% {
+            opacity: 0.12;
+          }
+          100% {
+            transform: translateX(60%) rotate(12deg);
+            opacity: 0;
           }
         }
       `}</style>
