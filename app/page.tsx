@@ -52,7 +52,8 @@ export default function LandingPage() {
   useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
-    let heroSpectrumTween: gsap.core.Tween | null = null
+    let heroWaveTween: gsap.core.Tween | null = null
+    let heroWaveDashTween: gsap.core.Tween | null = null
 
     // Hero Entrance Animation - Character by character reveal
     if (headlineRef.current) {
@@ -120,25 +121,34 @@ export default function LandingPage() {
 
     createParticles()
 
-    const heroSpectrumBars = sphereRef.current?.querySelectorAll('.hero-spectrum-bar')
-    if (heroSpectrumBars?.length) {
-      gsap.set(heroSpectrumBars, { transformOrigin: '50% 100%', scaleY: 0.35 })
-      heroSpectrumTween = gsap.to(heroSpectrumBars, {
+    const heroWavePaths = sphereRef.current?.querySelectorAll('.hero-wave-path')
+    const heroWaveDash = sphereRef.current?.querySelector('.hero-wave-dash')
+
+    if (heroWavePaths?.length) {
+      const d1 = 'M0,60 C40,20 80,100 120,60 C160,20 200,100 240,60 C280,20 320,100 360,60'
+      const d2 = 'M0,60 C40,35 80,85 120,60 C160,10 200,110 240,60 C280,28 320,92 360,60'
+      const d3 = 'M0,60 C40,10 80,110 120,60 C160,40 200,80 240,60 C280,12 320,108 360,60'
+
+      heroWaveTween = gsap.to(heroWavePaths, {
         keyframes: [
-          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
-          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
-          { scaleY: () => 0.15 + Math.random() * 1.1, duration: 0.18 },
+          { attr: { d: d2 }, duration: 0.35 },
+          { attr: { d: d3 }, duration: 0.35 },
+          { attr: { d: d1 }, duration: 0.35 },
         ],
-        stagger: { each: 0.012, from: 'random' },
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
       })
     }
 
+    if (heroWaveDash) {
+      heroWaveDashTween = gsap.to(heroWaveDash, { attr: { strokeDashoffset: -720 }, duration: 1.6, repeat: -1, ease: 'none' })
+    }
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
-      heroSpectrumTween?.kill()
+      heroWaveTween?.kill()
+      heroWaveDashTween?.kill()
     }
   }, [isLoaded, isGsapReady])
 
@@ -479,19 +489,44 @@ export default function LandingPage() {
                       <div className="absolute inset-0 opacity-30 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.18),transparent)] animate-[sheen_6s_ease-in-out_infinite]" />
                     </div>
 
-                    <div className="absolute inset-0 rounded-full">
-                      {[...Array(72)].map((_, i) => (
-                        <span
-                          key={i}
-                          className="hero-spectrum-bar absolute left-1/2 top-1/2 w-[2px] h-4 rounded-full"
-                          style={{
-                            transform: `translate(-50%, -50%) rotate(${i * (360 / 72)}deg) translateY(-47%)`,
-                            background: i % 3 === 0 ? 'var(--electric-cyan)' : 'var(--royal-violet)',
-                            opacity: 0.85,
-                            filter: 'drop-shadow(0 0 12px rgba(0,245,255,0.25))',
-                          }}
+                    <div className="absolute inset-0 grid place-items-center pointer-events-none">
+                      <svg viewBox="0 0 360 120" className="w-[92%] h-[44%] opacity-95">
+                        <defs>
+                          <linearGradient id="heroWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="var(--electric-cyan)" />
+                            <stop offset="100%" stopColor="var(--royal-violet)" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          className="hero-wave-path"
+                          d="M0,60 C40,20 80,100 120,60 C160,20 200,100 240,60 C280,20 320,100 360,60"
+                          fill="none"
+                          stroke="url(#heroWaveGrad)"
+                          strokeWidth="10"
+                          strokeLinecap="round"
+                          opacity="0.12"
                         />
-                      ))}
+                        <path
+                          className="hero-wave-path"
+                          d="M0,60 C40,20 80,100 120,60 C160,20 200,100 240,60 C280,20 320,100 360,60"
+                          fill="none"
+                          stroke="url(#heroWaveGrad)"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          style={{ filter: 'drop-shadow(0 0 12px rgba(0,245,255,0.35))' }}
+                        />
+                        <path
+                          className="hero-wave-path hero-wave-dash"
+                          d="M0,60 C40,20 80,100 120,60 C160,20 200,100 240,60 C280,20 320,100 360,60"
+                          fill="none"
+                          stroke="url(#heroWaveGrad)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray="18 18"
+                          strokeDashoffset="0"
+                          opacity="0.8"
+                        />
+                      </svg>
                     </div>
 
                     <div className="absolute inset-[18%] rounded-full border border-white/10 bg-black/30 backdrop-blur-sm grid place-items-center">
