@@ -197,8 +197,6 @@ export default function LandingPage() {
         if (phoneRef.current) {
           const copy = phoneRef.current.querySelectorAll('.landing-copy > *')
           const mock = phoneRef.current.querySelector('.landing-mock')
-        const phoneWavePaths = phoneRef.current.querySelectorAll('.ml-acoustic-path')
-        const phoneWaveDash = phoneRef.current.querySelector('.ml-acoustic-dash')
           const screenShot = phoneRef.current.querySelector('.ml-screen-shot')
 
         gsap.from(copy, {
@@ -248,30 +246,6 @@ export default function LandingPage() {
           )
         }
 
-        if (phoneWavePaths.length) {
-          const d1 = 'M0,48 C18,48 30,34 42,48 C54,62 66,48 78,48 C90,48 102,30 114,48 C126,66 138,48 150,48 C162,48 174,36 186,48 C198,60 210,48 222,48 C234,48 246,32 258,48 C270,64 282,48 294,48 C306,48 318,38 330,48'
-          const d2 = 'M0,48 C18,44 30,26 42,48 C54,70 66,48 78,48 C90,48 102,22 114,48 C126,74 138,48 150,48 C162,48 174,28 186,48 C198,68 210,48 222,48 C234,48 246,20 258,48 C270,76 282,48 294,48 C306,48 318,30 330,48'
-          const d3 = 'M0,48 C18,52 30,42 42,48 C54,54 66,48 78,48 C90,48 102,40 114,48 C126,56 138,48 150,48 C162,48 174,44 186,48 C198,52 210,48 222,48 C234,48 246,38 258,48 C270,58 282,48 294,48 C306,48 318,46 330,48'
-          const d4 = 'M0,48 C18,40 30,18 42,48 C54,78 66,48 78,48 C90,48 102,14 114,48 C126,82 138,48 150,48 C162,48 174,22 186,48 C198,74 210,48 222,48 C234,48 246,16 258,48 C270,80 282,48 294,48 C306,48 318,26 330,48'
-
-          const waveTween = gsap.to(phoneWavePaths, {
-            keyframes: [
-              { attr: { d: d2 }, duration: 0.36 },
-              { attr: { d: d4 }, duration: 0.36 },
-              { attr: { d: d3 }, duration: 0.32 },
-              { attr: { d: d1 }, duration: 0.36 },
-            ],
-            repeat: -1,
-            yoyo: true,
-            ease: 'sine.inOut',
-          })
-          cleanupFns.push(() => waveTween.kill())
-        }
-
-        if (phoneWaveDash) {
-          const dashTween = gsap.to(phoneWaveDash, { attr: { strokeDashoffset: -720 }, duration: 1.2, repeat: -1, ease: 'none' })
-          cleanupFns.push(() => dashTween.kill())
-        }
       }
 
       // QR Explosion Effect
@@ -675,7 +649,7 @@ export default function LandingPage() {
               Branded landing pages that feel alive
             </h2>
             <p className="text-white/70 leading-relaxed">
-              Swap venue backgrounds, drop in hero art, and let visitors tap “Talk with Agent” instantly. Scroll reveals a living conversation between the visitor and the exhibit.
+              Swap venue backgrounds, drop in hero art, and let visitors tap “Talk with Agent” instantly. The preview shows a branded, voice-first mobile experience.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {["AI-spec hero images", "QR-first flows", "Stripe paywall ready", "Mobile-optimized"].map((item) => (
@@ -711,44 +685,14 @@ export default function LandingPage() {
 
                 <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[78%] pointer-events-none">
                   <div className="ml-phone-wave relative rounded-2xl bg-black/35 border border-white/10 backdrop-blur-md px-4 py-4 shadow-[0_0_40px_rgba(0,245,255,0.18)]">
-                    <svg viewBox="0 0 330 96" className="w-full h-12 opacity-95">
-                      <defs>
-                        <linearGradient id="mlPhoneWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="var(--electric-cyan)" />
-                          <stop offset="100%" stopColor="var(--royal-violet)" />
-                        </linearGradient>
-                      </defs>
-
-                      <path
-                        className="ml-acoustic-path"
-                        d="M0,48 C18,48 30,34 42,48 C54,62 66,48 78,48 C90,48 102,30 114,48 C126,66 138,48 150,48 C162,48 174,36 186,48 C198,60 210,48 222,48 C234,48 246,32 258,48 C270,64 282,48 294,48 C306,48 318,38 330,48"
-                        fill="none"
-                        stroke="url(#mlPhoneWaveGrad)"
-                        strokeWidth="12"
-                        strokeLinecap="round"
-                        opacity="0.10"
-                      />
-                      <path
-                        className="ml-acoustic-path"
-                        d="M0,48 C18,48 30,34 42,48 C54,62 66,48 78,48 C90,48 102,30 114,48 C126,66 138,48 150,48 C162,48 174,36 186,48 C198,60 210,48 222,48 C234,48 246,32 258,48 C270,64 282,48 294,48 C306,48 318,38 330,48"
-                        fill="none"
-                        stroke="url(#mlPhoneWaveGrad)"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        style={{ filter: 'drop-shadow(0 0 12px rgba(0,245,255,0.35))' }}
-                      />
-                      <path
-                        className="ml-acoustic-path ml-acoustic-dash"
-                        d="M0,48 C18,48 30,34 42,48 C54,62 66,48 78,48 C90,48 102,30 114,48 C126,66 138,48 150,48 C162,48 174,36 186,48 C198,60 210,48 222,48 C234,48 246,32 258,48 C270,64 282,48 294,48 C306,48 318,38 330,48"
-                        fill="none"
-                        stroke="url(#mlPhoneWaveGrad)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray="18 18"
-                        strokeDashoffset="0"
-                        opacity="0.9"
-                      />
-                    </svg>
+                    <div className="relative h-12 overflow-hidden rounded-xl">
+                      <div className="ml-ripple-stack absolute inset-0">
+                        <span className="ml-ripple-ring ml-ripple-1" />
+                        <span className="ml-ripple-ring ml-ripple-2" />
+                        <span className="ml-ripple-ring ml-ripple-3" />
+                        <span className="ml-ripple-dot" />
+                      </div>
+                    </div>
                     <div className="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/60 text-center">
                       Acoustic audio
                     </div>
@@ -885,6 +829,64 @@ export default function LandingPage() {
             transform: translateX(60%) rotate(12deg);
             opacity: 0;
           }
+        }
+
+        @keyframes acousticRipple {
+          0% {
+            transform: translate(-50%, -50%) scale(0.25);
+            opacity: 0.65;
+          }
+          70% {
+            opacity: 0.16;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1.35);
+            opacity: 0;
+          }
+        }
+
+        .ml-ripple-stack {
+          position: relative;
+          width: 100%;
+          height: 100%;
+        }
+
+        .ml-ripple-ring {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 140px;
+          height: 140px;
+          border-radius: 9999px;
+          border: 2px solid rgba(0, 245, 255, 0.45);
+          box-shadow: 0 0 24px rgba(0, 245, 255, 0.18);
+          animation: acousticRipple 1.8s ease-out infinite;
+          will-change: transform, opacity;
+        }
+
+        .ml-ripple-2 {
+          animation-delay: 0.6s;
+          border-color: rgba(138, 43, 226, 0.38);
+          box-shadow: 0 0 24px rgba(138, 43, 226, 0.14);
+        }
+
+        .ml-ripple-3 {
+          animation-delay: 1.2s;
+          border-color: rgba(0, 245, 255, 0.28);
+          box-shadow: 0 0 24px rgba(0, 245, 255, 0.10);
+        }
+
+        .ml-ripple-dot {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 10px;
+          height: 10px;
+          border-radius: 9999px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(0, 245, 255, 0.65));
+          box-shadow: 0 0 22px rgba(0, 245, 255, 0.35);
+          opacity: 0.85;
         }
       `}</style>
     </div>
