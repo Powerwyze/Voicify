@@ -373,7 +373,7 @@ export default function LandingPage() {
     {
       title: 'Talk',
       desc: 'Real-time voice chat tailored to the exhibit and venue brand.',
-      image: '/assets/exhibits/live-call.png'
+      image: '/assets/exhibits/live-call-mona.png'
     }
   ]
 

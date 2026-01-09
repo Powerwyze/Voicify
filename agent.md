@@ -49,7 +49,7 @@ Prompt: Photoreal art museum; visitor scanning a QR beside a Renaissance paintin
 3) Stripe Paywall — `public/assets/exhibits/paywall.png` (1200x800)
 Prompt: Close-up of a phone showing a sleek paywall screen with gradient CTA; blurred museum wall behind; cyan glow on the pay button; photoreal, premium lighting.
 
-4) Live Voice Conversation — `public/assets/exhibits/live-call.png` (1200x800)
+4) Live Voice Conversation - `public/assets/exhibits/live-call-mona.png` (1200x800)
 Prompt: Person holding a phone near an exhibit; UI shows “Talk with Agent” and a pulsing cyan/violet waveform; dramatic but clean lighting; tech-forward photo.
 
 5) Expo Booth — `public/assets/exhibits/expo-booth.jpg` (1200x800)
@@ -91,7 +91,7 @@ Priority for homepage impact: 1 → 4 → 10 → 2 → 8 → 7 → 3 → 5 → 6
 public/assets/hero/voice-sphere-3d.png (optional fallback)
 public/assets/exhibits/museum-scan.png
 public/assets/exhibits/paywall.png
-public/assets/exhibits/live-call.png
+public/assets/exhibits/live-call-mona.png
 public/assets/exhibits/expo-booth.jpg
 public/assets/exhibits/zoo-interactive.jpg
 public/assets/backgrounds/neural-grid.png
