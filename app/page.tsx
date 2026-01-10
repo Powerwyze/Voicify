@@ -57,10 +57,15 @@ export default function LandingPage() {
 
     // Hero Entrance Animation - Character by character reveal
     if (headlineRef.current) {
-      const text = headlineRef.current.textContent || ''
+      const text = (headlineRef.current.innerHTML || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
       headlineRef.current.innerHTML = text
         .split('')
-        .map((char) => `<span class="inline-block opacity-0" style="will-change: transform">${char === ' ' ? '&nbsp;' : char}</span>`)
+        .map((char) => {
+          if (char === '\n') return '<br />'
+          return `<span class="inline-block opacity-0" style="will-change: transform">${char === ' ' ? '&nbsp;' : char}</span>`
+        })
         .join('')
 
       const chars = headlineRef.current.querySelectorAll('span')
@@ -385,7 +390,7 @@ export default function LandingPage() {
 
             <h1
               ref={headlineRef}
-              className="text-5xl md:text-7xl font-black mb-6 leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,245,255,0.15)]"
+              className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-[1.05] sm:leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,245,255,0.15)]"
               style={{ willChange: 'transform' }}
             >
               AI Voice Agents
