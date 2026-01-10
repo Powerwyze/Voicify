@@ -393,8 +393,8 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-[1.05] sm:leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,245,255,0.15)]"
               style={{ willChange: 'transform' }}
             >
-              AI Voice Agents
-              <br />
+              AI Tour Guide Agents 
+              <br/>
               for Museums & Events
             </h1>
 
@@ -482,9 +482,7 @@ export default function LandingPage() {
                       </svg>
                     </div>
 
-                    <div className="absolute inset-[18%] rounded-full border border-white/10 bg-black/30 backdrop-blur-sm grid place-items-center">
-                      <div className="text-xs uppercase tracking-[0.35em] text-white/60">Listening</div>
-                    </div>
+                    <div className="absolute inset-[18%] rounded-full border border-white/10 bg-black/30 backdrop-blur-sm" />
                   </div>
                 </div>
               </div>
