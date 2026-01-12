@@ -74,6 +74,11 @@ function NewExhibitForm() {
   const [landingSpec, setLandingSpec] = useState<LandingSpec | null>(null)
   const [generatingLanding, setGeneratingLanding] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [landingBackgroundMode, setLandingBackgroundMode] = useState<'venue' | 'black' | 'upload' | 'ai'>('venue')
+  const [landingBackgroundImageUrl, setLandingBackgroundImageUrl] = useState<string>('')
+  const [landingBackgroundPrompt, setLandingBackgroundPrompt] = useState('')
+  const [uploadingLandingBackground, setUploadingLandingBackground] = useState(false)
+  const [generatingLandingBackground, setGeneratingLandingBackground] = useState(false)
 
   // Load data on mount
   useEffect(() => {
@@ -169,6 +174,13 @@ function NewExhibitForm() {
     setQrShape(agent.qr_shape || 'square')
     setVoicePlatform(agent.voice_platform || 'elevenlabs')
     setLandingSpec(agent.landing_spec || null)
+    const bgMode = agent.landing_spec?.background?.mode
+    if (bgMode === 'venue' || bgMode === 'black' || bgMode === 'upload' || bgMode === 'ai') {
+      setLandingBackgroundMode(bgMode)
+    }
+    if (agent.landing_spec?.background?.imageUrl) {
+      setLandingBackgroundImageUrl(agent.landing_spec.background.imageUrl)
+    }
 
     // Load capabilities if Tier 3
     if (agent.tier === 3) {
@@ -398,7 +410,17 @@ function NewExhibitForm() {
       }
 
       console.log('Setting landing spec:', result.spec)
-      setLandingSpec(result.spec)
+      const specWithBg: LandingSpec = {
+        ...result.spec,
+        background: {
+          mode: landingBackgroundMode,
+          imageUrl:
+            landingBackgroundMode === 'upload' || landingBackgroundMode === 'ai'
+              ? (landingBackgroundImageUrl || undefined)
+              : undefined,
+        },
+      }
+      setLandingSpec(specWithBg)
       setPreviewOpen(true)
     } catch (err: any) {
       console.error('Landing generation error:', err)
@@ -415,20 +437,114 @@ function NewExhibitForm() {
     }
 
     try {
+      const specToSave: LandingSpec = {
+        ...landingSpec,
+        background: {
+          mode: landingBackgroundMode,
+          imageUrl:
+            landingBackgroundMode === 'upload' || landingBackgroundMode === 'ai'
+              ? (landingBackgroundImageUrl || undefined)
+              : undefined,
+        },
+      }
+
       const { error } = await supabase
         .from('agents')
         .update({
-          landing_spec: landingSpec,
+          landing_spec: specToSave,
           landing_last_generated_at: new Date().toISOString(),
         })
         .eq('id', agentId)
 
       if (error) throw error
 
+      setLandingSpec(specToSave)
       setError(null)
       setPreviewOpen(false)
     } catch (err: any) {
       setError(err.message || 'Failed to save landing page')
+    }
+  }
+
+  const handleLandingBackgroundUpload = async (file: File | null) => {
+    if (!file) return
+    if (!venueId) {
+      setError('Select a venue before uploading a background image')
+      return
+    }
+
+    setUploadingLandingBackground(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('venueId', venueId)
+
+      const res = await fetch('/api/landing/upload-background', {
+        method: 'POST',
+        body: form,
+      })
+
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to upload background image')
+      }
+
+      setLandingBackgroundImageUrl(json.imageUrl)
+      setLandingBackgroundMode('upload')
+      setLandingSpec((prev) =>
+        prev
+          ? {
+              ...prev,
+              background: { mode: 'upload', imageUrl: json.imageUrl },
+            }
+          : prev
+      )
+    } catch (e: any) {
+      setError(e.message || 'Failed to upload background image')
+    } finally {
+      setUploadingLandingBackground(false)
+    }
+  }
+
+  const handleGenerateLandingBackground = async () => {
+    if (!landingBackgroundPrompt.trim()) {
+      setError('Enter a prompt to generate a background')
+      return
+    }
+
+    setGeneratingLandingBackground(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `${landingBackgroundPrompt}. Wide background image for a museum landing page. Dark premium aesthetic with electric cyan and royal violet accents. No text.`,
+          width: 1024,
+          height: 1024,
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to generate image')
+      }
+
+      setLandingBackgroundImageUrl(json.imageUrl)
+      setLandingBackgroundMode('ai')
+      setLandingSpec((prev) =>
+        prev
+          ? {
+              ...prev,
+              background: { mode: 'ai', imageUrl: json.imageUrl },
+            }
+          : prev
+      )
+    } catch (e: any) {
+      setError(e.message || 'Failed to generate background image')
+    } finally {
+      setGeneratingLandingBackground(false)
     }
   }
 
@@ -614,6 +730,111 @@ function NewExhibitForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
+                  <label className="block text-sm font-medium mb-2">Background</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      type="button"
+                      variant={landingBackgroundMode === 'black' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setLandingBackgroundMode('black')
+                        setLandingBackgroundImageUrl('')
+                        setLandingSpec((prev) => prev ? ({ ...prev, background: { mode: 'black' } }) : prev)
+                      }}
+                    >
+                      Black
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={landingBackgroundMode === 'upload' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setLandingBackgroundMode('upload')
+                        setLandingSpec((prev) => prev ? ({ ...prev, background: { mode: 'upload', imageUrl: landingBackgroundImageUrl || undefined } }) : prev)
+                      }}
+                    >
+                      Upload
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={landingBackgroundMode === 'ai' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setLandingBackgroundMode('ai')
+                        setLandingSpec((prev) => prev ? ({ ...prev, background: { mode: 'ai', imageUrl: landingBackgroundImageUrl || undefined } }) : prev)
+                      }}
+                    >
+                      AI
+                    </Button>
+                  </div>
+
+                  {landingBackgroundMode === 'upload' && (
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+                      <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer">
+                        {uploadingLandingBackground ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                        <span>{uploadingLandingBackground ? 'Uploading...' : 'Upload image'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingLandingBackground}
+                          onChange={(e) => handleLandingBackgroundUpload(e.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!landingBackgroundImageUrl}
+                        onClick={() => {
+                          setLandingBackgroundImageUrl('')
+                          setLandingSpec((prev) => prev ? ({ ...prev, background: { mode: 'upload' } }) : prev)
+                        }}
+                      >
+                        Clear
+                      </Button>
+                      {landingBackgroundImageUrl && (
+                        <p className="text-xs text-muted-foreground truncate sm:max-w-[260px]">
+                          {landingBackgroundImageUrl}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {landingBackgroundMode === 'ai' && (
+                    <div className="mt-3 space-y-2">
+                      <Input
+                        value={landingBackgroundPrompt}
+                        onChange={(e) => setLandingBackgroundPrompt(e.target.value)}
+                        placeholder="Example: dark museum hallway with cyan neon accents, cinematic, soft blur"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        disabled={generatingLandingBackground || !landingBackgroundPrompt.trim()}
+                        onClick={handleGenerateLandingBackground}
+                      >
+                        {generatingLandingBackground ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate background
+                          </>
+                        )}
+                      </Button>
+                      {landingBackgroundImageUrl && (
+                        <p className="text-xs text-muted-foreground">
+                          Background ready — open Preview to see it.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <label className="block text-sm font-medium mb-1">
                     Describe your landing page
                   </label>
@@ -948,6 +1169,7 @@ function NewExhibitForm() {
                 onTalkClick={() => {}}
                 onScanAnotherClick={() => {}}
                 isPreview={true}
+                backgroundImage={venues.find((v) => v.id === venueId)?.background_image_url}
               />
             ) : (
               <div className="p-8 text-center text-gray-500">

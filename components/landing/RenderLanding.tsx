@@ -29,6 +29,12 @@ export default function RenderLanding({
   const talkLabel = spec.buttons?.talkLabel ?? `Talk with ${agentName}`
   const scanAnotherLabel = spec.buttons?.scanAnotherLabel ?? 'Scan another QR'
 
+  const backgroundMode = spec.background?.mode
+  const resolvedBackgroundImage =
+    backgroundMode === 'black'
+      ? undefined
+      : (spec.background?.imageUrl ?? backgroundImage)
+
   // Refs for animated blocks (currently not used in mobile-first design)
   const blockRefsArray = useRef<(HTMLElement | null)[]>([])
 
@@ -51,13 +57,17 @@ export default function RenderLanding({
   return (
     <div
       className={isPreview ? 'flex flex-col h-full relative overflow-hidden' : 'h-dvh flex flex-col relative overflow-hidden'}
+      style={{
+        backgroundColor: backgroundMode === 'black' ? '#05060B' : theme.bg,
+        color: theme.text,
+      }}
     >
       {/* Background Image with Overlay */}
-      {backgroundImage && (
+      {resolvedBackgroundImage && (
         <>
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${backgroundImage})` }}
+            style={{ backgroundImage: `url(${resolvedBackgroundImage})` }}
           />
           <div className="absolute inset-0 bg-black/40" />
         </>

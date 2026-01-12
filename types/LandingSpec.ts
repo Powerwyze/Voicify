@@ -74,6 +74,10 @@ export type LandingSpec = {
   version: 1;
   title: string; // e.g., "Champion Banyan Tree"
   subtitle?: string; // short line
+  background?: {
+    mode?: 'venue' | 'black' | 'upload' | 'ai';
+    imageUrl?: string;
+  };
   theme?: {
     primary?: string; // hex, default "#111827"
     background?: string; // hex, default "#FFFFFF"
