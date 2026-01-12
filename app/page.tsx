@@ -16,6 +16,7 @@ export default function LandingPage() {
   const [activeTier, setActiveTier] = useState<number | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isGsapReady, setIsGsapReady] = useState(false)
+  const [phonePreviewImageUrl, setPhonePreviewImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let isCancelled = false
@@ -50,6 +51,19 @@ export default function LandingPage() {
   }, [])
 
   useEffect(() => {
+    return () => {
+      if (phonePreviewImageUrl?.startsWith('blob:')) URL.revokeObjectURL(phonePreviewImageUrl)
+    }
+  }, [phonePreviewImageUrl])
+
+  const onPhonePreviewImageChange = (file: File | null) => {
+    setPhonePreviewImageUrl((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+      return file ? URL.createObjectURL(file) : null
+    })
+  }
+
+  useEffect(() => {
     if (!isLoaded || !isGsapReady) return
 
     let heroWaveTween: gsap.core.Tween | null = null
@@ -57,14 +71,20 @@ export default function LandingPage() {
 
     // Hero Entrance Animation - Character by character reveal
     if (headlineRef.current) {
-      const text = (headlineRef.current.innerHTML || '')
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<[^>]*>/g, '')
+      // Use textContent to get decoded text (not innerHTML which has &amp; etc)
+      const text = headlineRef.current.textContent || ''
+
       headlineRef.current.innerHTML = text
         .split('')
         .map((char) => {
           if (char === '\n') return '<br />'
-          return `<span class="inline-block opacity-0" style="will-change: transform">${char === ' ' ? '&nbsp;' : char}</span>`
+          if (char === ' ') return '<span class="inline-block opacity-0" style="will-change: transform">&nbsp;</span>'
+          // Escape special HTML characters
+          const escaped = char
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+          return `<span class="inline-block opacity-0" style="will-change: transform">${escaped}</span>`
         })
         .join('')
 
@@ -305,25 +325,40 @@ export default function LandingPage() {
 
   const tiers = [
     {
-      name: 'Essential Voice',
+      name: 'Event Plan',
       icon: 'I',
       price: '$99/mo',
-      features: ['Single language', '1,000 conversations/mo', 'Smart prompts', 'QR codes + landing'],
+      features: [
+        '5 AI tour guide agents (+$30/agent)',
+        '2 voice languages (EN & ES)',
+        '1,000 monthly mins (then pay-as-you-go)',
+        '1 custom third-party integration'
+      ],
       color: 'from-blue-400 to-blue-600'
     },
     {
-      name: 'Multi-Language Pro',
+      name: 'Museum Plan',
       icon: 'II',
       price: '$299/mo',
-      features: ['50+ languages', '5,000 conversations/mo', 'Advanced analytics', 'Custom branding'],
+      features: [
+        '15 AI tour guide agents (+$20/agent)',
+        'Voice Cloning',
+        '20+ languages',
+        '2,500 monthly mins (then pay-as-you-go)',
+        'Unlimited custom third-party integrations'
+      ],
       color: 'from-[var(--electric-cyan)] to-[var(--royal-violet)]',
       popular: true
     },
     {
-      name: 'Enterprise',
+      name: 'Pay as you Go',
       icon: 'III',
       price: 'Custom',
-      features: ['Unlimited everything', 'Dedicated support', 'White label', 'API + SSO'],
+      features: [
+        'Pay-as-you-go minutes',
+        'Unlimited Voice Cloning',
+        'Physical exhibit buildout'
+      ],
       color: 'from-purple-500 to-pink-600'
     }
   ]
@@ -331,7 +366,7 @@ export default function LandingPage() {
   const scanSteps = [
     {
       title: 'Scan',
-      desc: 'Visitors tap a glowing QR and launch the agent in seconds.',
+      desc: 'Visitors tap a NFC Sticker or scan a QR code and launch the agent in seconds.',
       image: '/assets/exhibits/museum-scan.png'
     },
     {
@@ -385,7 +420,7 @@ export default function LandingPage() {
           <div className="text-left">
             <div className="inline-flex items-center gap-2 glass-card mb-6 px-4 py-2 bg-white/10 border border-white/20">
               <span className="w-2 h-2 bg-[var(--electric-cyan)] rounded-full animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)] font-semibold">Command your exhibits</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)] font-semibold">Give your exhibits</span>
             </div>
 
             <h1
@@ -393,7 +428,7 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-[1.05] sm:leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,245,255,0.15)]"
               style={{ willChange: 'transform' }}
             >
-              AI Tour Guide Agents 
+              AI Tour Guides
               <br/>
               for Museums & Events
             </h1>
@@ -486,9 +521,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6 text-center text-sm text-white/70">
-                Parallax and GSAP-driven entrance animation keep the hero kinetic.
-              </div>
             </div>
           </div>
         </div>
@@ -516,7 +548,7 @@ export default function LandingPage() {
             Scan • Pay • Talk
           </h2>
           <p className="text-center text-white/70 max-w-2xl mx-auto mb-16">
-            Every visitor journey is a kinetic story: a glowing QR, a branded paywall, and a live AI voice that knows the exhibit by heart.
+            Every visitor journey is a kinetic story: a Tap or scan QR, a branded paywall, and a live AI voice that knows the exhibit by heart.
           </p>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -591,17 +623,34 @@ export default function LandingPage() {
                 )}
 
                 <div className="text-6xl mb-4 flex justify-center">
-                  <div className={`relative ${tier.name === 'Multi-Language Pro' ? 'orbit-container' : ''}`}>
+                  <div className={`relative ${(tier.name === 'Event Plan' || tier.name === 'Museum Plan') ? 'orbit-container' : ''}`}>
                     {tier.icon}
-                    {tier.name === 'Multi-Language Pro' && (
+                    {tier.name === 'Event Plan' && (
                       <div className="absolute inset-0">
-                        {['EN', 'ES', 'FR', 'JP'].map((flag, idx) => (
+                        {['EN', 'ES'].map((lang, idx) => (
                           <span
                             key={idx}
-                            className="absolute text-2xl"
+                            className="absolute text-xl font-bold text-[var(--electric-cyan)]"
                             style={{
-                              animation: `orbit 10s linear infinite`,
-                              animationDelay: `${idx * 2.5}s`,
+                              animation: `orbit 8s linear infinite`,
+                              animationDelay: `${idx * 4}s`,
+                              transformOrigin: '50px 50px'
+                            }}
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {tier.name === 'Museum Plan' && (
+                      <div className="absolute inset-0">
+                        {['EN', 'ES', 'FR', 'JP', 'ZH', 'AR'].map((flag, idx) => (
+                          <span
+                            key={idx}
+                            className="absolute text-xl font-bold"
+                            style={{
+                              animation: `orbit 12s linear infinite`,
+                              animationDelay: `${idx * 2}s`,
                               transformOrigin: '50px 50px'
                             }}
                           >
@@ -662,6 +711,31 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+
+            <div className="glass-card bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="text-sm font-semibold text-white mb-2">Try your own phone screen</div>
+              <div className="text-xs text-white/60 mb-4">
+                Upload an image to replace the preview on the right (recommended: 1080×1920).
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <label className="inline-flex items-center gap-3 px-4 py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                  <span className="text-sm text-white/80 font-semibold">Upload Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => onPhonePreviewImageChange(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="px-4 py-3 rounded-xl border border-white/15 bg-white/5 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  onClick={() => onPhonePreviewImageChange(null)}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="relative">
@@ -669,14 +743,23 @@ export default function LandingPage() {
                  style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.35)' }}>
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-black/20" />
               <div className="relative aspect-[3/5] rounded-2xl overflow-hidden bg-[#05060B] border border-white/10">
-                <Image
-                  src="/assets/ui/phone-screen.png"
-                  alt="Visitor experience preview"
-                  fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  className="ml-screen-shot object-cover"
-                  priority={false}
-                />
+                {phonePreviewImageUrl ? (
+                  // Use <img> for blob: URLs (Next/Image doesn't reliably optimize local object URLs)
+                  <img
+                    src={phonePreviewImageUrl}
+                    alt="Visitor experience preview"
+                    className="ml-screen-shot absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src="/assets/ui/phone-screen.png"
+                    alt="Visitor experience preview"
+                    fill
+                    sizes="(max-width: 768px) 90vw, 420px"
+                    className="ml-screen-shot object-cover"
+                    priority={false}
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30 pointer-events-none" />
 
                 <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[86%] pointer-events-none">
