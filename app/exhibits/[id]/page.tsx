@@ -113,23 +113,49 @@ export default function ExhibitDetailPage({ params }: { params: { id: string } }
     if (!agent) return
 
     setPublishing(true)
-    const newStatus = agent.status === 'published' ? 'draft' : 'published'
-    const updateData: any = { status: newStatus }
 
-    // Set first_published_at if publishing for the first time
-    if (newStatus === 'published' && !agent.first_published_at) {
-      updateData.first_published_at = new Date().toISOString()
+    try {
+      // If unpublishing, just update the status directly
+      if (agent.status === 'published') {
+        const { error } = await supabase
+          .from('agents')
+          .update({ status: 'draft' })
+          .eq('id', params.id)
+
+        if (error) throw error
+        setAgent({ ...agent, status: 'draft' })
+        setPublishing(false)
+        return
+      }
+
+      // If publishing, use the API endpoint to handle sync and billing
+      const response = await fetch('/api/agents/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: params.id })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to publish')
+      }
+
+      if (result.requiresBilling) {
+        // First publish - redirect to billing
+        router.push('/billing?first_publish=true')
+        return
+      }
+
+      // Successfully published
+      setAgent({ ...agent, ...result.agent })
+      alert('Agent published successfully! It has been synced to ElevenLabs.')
+    } catch (error: any) {
+      console.error('Publish error:', error)
+      alert(`Failed to publish: ${error.message}`)
+    } finally {
+      setPublishing(false)
     }
-
-    const { error } = await supabase
-      .from('agents')
-      .update(updateData)
-      .eq('id', params.id)
-
-    if (!error) {
-      setAgent({ ...agent, ...updateData })
-    }
-    setPublishing(false)
   }
 
   const handleDelete = async () => {
