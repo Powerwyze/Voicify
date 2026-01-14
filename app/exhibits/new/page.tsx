@@ -203,8 +203,8 @@ function NewExhibitForm() {
     }
 
     // Generate QR preview
-    if (agent.public_id) {
-      const url = getVisitorUrl(agent.public_id)
+    if (agent.slug) {
+      const url = getVisitorUrl(agent.slug, window.location.origin)
       const qr = await generateQRCode(url, agent.qr_shape)
       setQrPreview(qr)
     }
@@ -314,8 +314,8 @@ function NewExhibitForm() {
       }
 
       // Generate QR preview
-      if (result.agent.public_id) {
-        const url = getVisitorUrl(result.agent.public_id)
+      if (result.agent.slug) {
+        const url = getVisitorUrl(result.agent.slug, window.location.origin)
         const qr = await generateQRCode(url, qrShape)
         setQrPreview(qr)
       }

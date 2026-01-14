@@ -20,7 +20,8 @@ export async function generateQRCode(
   return dataUrl
 }
 
-export function getVisitorUrl(publicId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  return `${baseUrl}/visitor/${publicId}`
+export function getVisitorUrl(slug: string, baseUrl?: string): string {
+  // Use provided baseUrl, or try to get from window if in browser, otherwise fallback
+  const url = baseUrl || (typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+  return `${url}/visitor/${slug}`
 }
