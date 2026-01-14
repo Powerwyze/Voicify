@@ -358,9 +358,25 @@ export default function ExhibitDetailPage({ params }: { params: { id: string } }
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  {window.location.origin}/visitor/{agent.slug}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground text-center">
+                    {window.location.origin}/visitor/{agent.slug}
+                  </p>
+                  {agent.status !== 'published' && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                      <p className="text-xs text-yellow-800 text-center">
+                        ⚠️ This QR code won't work until you publish the agent
+                      </p>
+                    </div>
+                  )}
+                  {agent.status === 'published' && (
+                    <div className="bg-green-50 border border-green-200 rounded p-2">
+                      <p className="text-xs text-green-800 text-center">
+                        ✓ This QR code is live and accessible to visitors
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

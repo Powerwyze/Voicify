@@ -17,7 +17,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get agent with venue and organization info
+    // First check if agent exists with this slug (regardless of status)
+    const { data: agentCheck } = await supabase
+      .from('agents')
+      .select('id, slug, status')
+      .eq('slug', agentPublicId)
+      .single()
+
+    // If no agent found at all
+    if (!agentCheck) {
+      console.error(`Agent not found with slug: ${agentPublicId}`)
+      return NextResponse.json(
+        { success: false, error: `Agent not found with slug: ${agentPublicId}` },
+        { status: 404 }
+      )
+    }
+
+    // If agent exists but not published
+    if (agentCheck.status !== 'published') {
+      console.error(`Agent found but not published. Status: ${agentCheck.status}`)
+      return NextResponse.json(
+        { success: false, error: `This agent is not published yet. Current status: ${agentCheck.status}` },
+        { status: 403 }
+      )
+    }
+
+    // Get full agent with venue and organization info
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select(`
@@ -51,9 +76,10 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (agentError || !agent) {
+      console.error('Error fetching full agent data:', agentError)
       return NextResponse.json(
-        { success: false, error: 'Agent not found or not published' },
-        { status: 404 }
+        { success: false, error: 'Error loading agent data' },
+        { status: 500 }
       )
     }
 

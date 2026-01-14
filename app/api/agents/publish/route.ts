@@ -58,17 +58,22 @@ export async function POST(request: NextRequest) {
     //   console.error('Failed to sync to ElevenLabs:', error)
     // }
 
-    const { error: updateError } = await supabase
+    const { data: updatedAgent, error: updateError } = await supabase
       .from('agents')
       .update(updateData)
       .eq('id', agentId)
+      .select()
+      .single()
 
-    if (updateError) throw updateError
+    if (updateError) {
+      console.error('Update error:', updateError)
+      throw updateError
+    }
 
     return NextResponse.json({
       success: true,
       requiresBilling: false,
-      agent: { ...agent, ...updateData }
+      agent: updatedAgent
     })
   } catch (error: any) {
     console.error('Publish error:', error)
