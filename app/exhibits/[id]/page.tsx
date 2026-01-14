@@ -141,15 +141,9 @@ export default function ExhibitDetailPage({ params }: { params: { id: string } }
         throw new Error(result.error || 'Failed to publish')
       }
 
-      if (result.requiresBilling) {
-        // First publish - redirect to billing
-        router.push('/billing?first_publish=true')
-        return
-      }
-
-      // Successfully published
+      // Successfully published - agent and landing page are now live!
       setAgent({ ...agent, ...result.agent })
-      alert('Agent published successfully! It has been synced to ElevenLabs.')
+      alert('Agent published successfully! Your landing page is now live and accessible to visitors.')
     } catch (error: any) {
       console.error('Publish error:', error)
       alert(`Failed to publish: ${error.message}`)

@@ -37,30 +37,26 @@ export async function POST(request: NextRequest) {
       agent.venue = agent.venues.display_name
     }
 
-    // Check if first publish (need to redirect to billing)
-    if (!agent.first_published_at) {
-      return NextResponse.json({
-        success: true,
-        requiresBilling: true,
-        agent
-      })
-    }
-
-    // Sync agent to ElevenLabs Conversational AI
-    let elevenLabsAgentId = agent.elevenlabs_agent_id
-    try {
-      const result = await syncAgentToElevenLabs(agent)
-      elevenLabsAgentId = result.agentId || agent.elevenlabs_agent_id
-    } catch (error: any) {
-      console.error('Failed to sync to ElevenLabs:', error)
-      // Continue publishing even if ElevenLabs sync fails
-    }
-
-    // Update status to published and store ElevenLabs agent ID
+    // Update status to published and set first_published_at if needed
     const updateData: any = { status: 'published' }
-    if (elevenLabsAgentId && elevenLabsAgentId !== agent.elevenlabs_agent_id) {
-      updateData.elevenlabs_agent_id = elevenLabsAgentId
+
+    // Set first_published_at if this is the first time publishing
+    if (!agent.first_published_at) {
+      updateData.first_published_at = new Date().toISOString()
     }
+
+    // TODO: Re-enable ElevenLabs sync when API keys are configured
+    // For now, skip sync to allow publishing without API keys
+    // let elevenLabsAgentId = agent.elevenlabs_agent_id
+    // try {
+    //   const result = await syncAgentToElevenLabs(agent)
+    //   elevenLabsAgentId = result.agentId || agent.elevenlabs_agent_id
+    //   if (elevenLabsAgentId && elevenLabsAgentId !== agent.elevenlabs_agent_id) {
+    //     updateData.elevenlabs_agent_id = elevenLabsAgentId
+    //   }
+    // } catch (error: any) {
+    //   console.error('Failed to sync to ElevenLabs:', error)
+    // }
 
     const { error: updateError } = await supabase
       .from('agents')
