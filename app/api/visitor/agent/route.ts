@@ -52,9 +52,7 @@ export async function GET(request: NextRequest) {
         bio,
         tier,
         voice,
-        personality,
-        system_prompt,
-        first_message,
+        persona,
         important_facts,
         status,
         venue_id,
@@ -102,9 +100,9 @@ export async function GET(request: NextRequest) {
         organization: agent.organizations,
         supportedLanguages,
         voice: agent.voice,
-        personality: agent.personality,
-        systemPrompt: agent.system_prompt,
-        firstMessage: agent.first_message,
+        personality: agent.persona,
+        systemPrompt: agent.persona,
+        firstMessage: `Hello! I'm ${agent.name}. How can I help you today?`,
         landing_spec: agent.landing_spec
       }
     })
