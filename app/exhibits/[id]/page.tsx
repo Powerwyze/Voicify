@@ -53,6 +53,9 @@ export default function ExhibitDetailPage({ params }: { params: { id: string } }
 
   const handleRegenerateQR = async () => {
     setRegenerating(true)
+    // Clear QR code first to force a fresh render
+    setQrCode(null)
+    await new Promise(resolve => setTimeout(resolve, 100))
     await generateQR()
     setTimeout(() => setRegenerating(false), 500)
   }
@@ -142,7 +145,8 @@ export default function ExhibitDetailPage({ params }: { params: { id: string } }
       }
 
       // Successfully published - agent and landing page are now live!
-      setAgent({ ...agent, ...result.agent })
+      // Refetch agent to ensure we have the latest data and trigger QR regeneration
+      await fetchAgent()
       alert('Agent published successfully! Your landing page is now live and accessible to visitors.')
     } catch (error: any) {
       console.error('Publish error:', error)
