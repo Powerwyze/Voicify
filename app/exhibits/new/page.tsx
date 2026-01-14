@@ -243,7 +243,7 @@ function NewExhibitForm() {
     try {
       // Build landing spec with current background settings
       // Create a minimal landing spec if one doesn't exist but background mode is set
-      const currentLandingSpec = landingSpec ? {
+      const currentLandingSpec: LandingSpec | null = landingSpec ? {
         ...landingSpec,
         background: {
           mode: landingBackgroundMode,
