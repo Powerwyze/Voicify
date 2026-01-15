@@ -46,10 +46,13 @@ async function run() {
     'supabase/migrations/003_add_elevenlabs_voice_fields.sql',
     'supabase/migrations/004_visitor_payments_and_sessions.sql',
     'supabase/migrations/005_add_paywall_currency_description.sql',
+    'supabase/migrations/005_add_venue_background_image.sql',
     'supabase/migrations/006_disable_rls_visitor_tables.sql',
+    'supabase/migrations/006_setup_venue_images_storage.sql',
     'supabase/migrations/007_add_unique_constraint_paywall_org.sql',
-    'supabase/add_elevenlabs_agent_id.sql',
     'supabase/migrations/008_add_voice_platform.sql',
+    'supabase/migrations/add_elevenlabs_agent_id.sql',
+    'supabase/migrations/009_add_landing_spec.sql',
   ]
 
   const startFrom = process.env.MIGRATE_FROM?.trim()
