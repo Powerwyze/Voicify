@@ -112,7 +112,11 @@ When ending a conversation or saying goodbye, always say: "${agent.end_script}"
 }
 
 async function createElevenLabsAgent(payload: any) {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/elevenlabs/create-agent`, {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  const response = await fetch(`${baseUrl}/api/elevenlabs/create-agent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -127,7 +131,11 @@ async function createElevenLabsAgent(payload: any) {
 }
 
 async function updateElevenLabsAgent(agentId: string, payload: any) {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/elevenlabs/update-agent`, {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  const response = await fetch(`${baseUrl}/api/elevenlabs/update-agent`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ agentId, ...payload })
