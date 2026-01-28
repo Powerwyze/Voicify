@@ -202,7 +202,7 @@ export default function OnboardingPage() {
             </span>
           </div>
           <CardTitle>
-            {step === 1 ? 'Welcome to Voicify It!' : 'Set up your venue'}
+            {step === 1 ? 'Welcome to ITtalksBack!' : 'Set up your venue'}
           </CardTitle>
           <CardDescription>
             {step === 1

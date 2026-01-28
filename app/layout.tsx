@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Voicify It - AI Voice Agent Platform',
+  title: 'ITtalksBack - AI Voice Agent Platform',
   description: 'Transform your museum or event with AI voice agents. Engage visitors through natural conversations.',
 }
 

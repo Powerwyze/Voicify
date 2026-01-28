@@ -5,18 +5,27 @@ import { gsap } from 'gsap'
 import Lenis from 'lenis'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { Conversation } from '@elevenlabs/client'
 
 export default function LandingPage() {
+  const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
   const sphereRef = useRef<HTMLDivElement>(null)
   const headlineRef = useRef<HTMLHeadingElement>(null)
   const scannerRef = useRef<HTMLDivElement>(null)
   const phoneRef = useRef<HTMLDivElement>(null)
-  const qrRef = useRef<HTMLDivElement>(null)
   const [activeTier, setActiveTier] = useState<number | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isGsapReady, setIsGsapReady] = useState(false)
   const [phonePreviewImageUrl, setPhonePreviewImageUrl] = useState<string | null>(null)
+  const [conversationStatus, setConversationStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle')
+  const [conversationError, setConversationError] = useState<string | null>(null)
+  const conversationRef = useRef<any>(null)
+
+  const adminPasscode = '0987654321'
+  const adminPasscodeKey = 'ittalksback-admin-passcode'
+  const agentId = 'agent_5001kfc63jfvfqevnzrgm0jzceye'
 
   useEffect(() => {
     let isCancelled = false
@@ -56,11 +65,83 @@ export default function LandingPage() {
     }
   }, [phonePreviewImageUrl])
 
+  useEffect(() => {
+    return () => {
+      if (conversationRef.current) {
+        conversationRef.current.endSession?.().catch(() => {})
+        conversationRef.current = null
+      }
+    }
+  }, [])
+
   const onPhonePreviewImageChange = (file: File | null) => {
     setPhonePreviewImageUrl((prev) => {
       if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
       return file ? URL.createObjectURL(file) : null
     })
+  }
+
+  const handleAdminAccess = () => {
+    const entered = window.prompt('Enter admin passcode')
+    if (!entered) return
+    if (entered === adminPasscode) {
+      sessionStorage.setItem(adminPasscodeKey, adminPasscode)
+      router.push('/auth/signin')
+    } else {
+      window.alert('Incorrect passcode.')
+    }
+  }
+
+  const startConversation = async () => {
+    if (conversationStatus === 'connecting' || conversationStatus === 'connected') return
+
+    setConversationError(null)
+    setConversationStatus('connecting')
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((track) => track.stop())
+
+      const conversation = await Conversation.startSession({
+        agentId,
+        connectionType: 'websocket',
+        onConnect: () => {
+          setConversationStatus('connected')
+        },
+        onDisconnect: () => {
+          setConversationStatus('idle')
+          conversationRef.current = null
+        },
+        onError: (error: any) => {
+          const message = typeof error === 'string' ? error : error?.message || 'Unknown error'
+          setConversationError(message)
+          setConversationStatus('error')
+          conversationRef.current = null
+        },
+      })
+
+      conversationRef.current = conversation
+    } catch (error: any) {
+      const message = error?.message || 'Unable to start voice session'
+      setConversationError(message)
+      setConversationStatus('error')
+    }
+  }
+
+  const stopConversation = async () => {
+    if (!conversationRef.current) {
+      setConversationStatus('idle')
+      return
+    }
+
+    try {
+      await conversationRef.current.endSession?.()
+    } catch {
+      // Swallow stop errors to avoid blocking UI reset.
+    } finally {
+      conversationRef.current = null
+      setConversationStatus('idle')
+    }
   }
 
   useEffect(() => {
@@ -273,46 +354,6 @@ export default function LandingPage() {
 
       }
 
-      // QR Explosion Effect
-      if (qrRef.current) {
-        const qrImage = qrRef.current.querySelector('.qr-image')
-        const cta = qrRef.current.querySelector('.cta-button')
-
-        if (qrImage) {
-          gsap.fromTo(qrImage,
-            { scale: 0.7, opacity: 0, rotation: -10 },
-            {
-              scale: 1,
-              opacity: 1,
-              rotation: 0,
-              duration: 1.1,
-              ease: 'back.out(1.7)',
-              scrollTrigger: {
-                trigger: qrRef.current,
-                start: 'top 65%'
-              }
-            }
-          )
-        }
-
-        if (cta) {
-          gsap.fromTo(cta,
-            { scale: 0.8, opacity: 0 },
-            {
-              scale: 1,
-              opacity: 1,
-              duration: 1,
-              delay: 0.4,
-              ease: 'elastic.out(1, 0.5)',
-              scrollTrigger: {
-                trigger: qrRef.current,
-                start: 'top 60%'
-              }
-            }
-          )
-        }
-      }
-
       // Refresh ScrollTrigger after setup
       ;(gsap as any).ScrollTrigger?.refresh?.()
     }, 500)
@@ -386,11 +427,15 @@ export default function LandingPage() {
       {/* Fixed Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass backdrop-blur-lg bg-white/70 border-b border-white/30">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold gradient-text tracking-tight">Voicify It</div>
+          <div className="text-2xl font-bold gradient-text tracking-tight">ITtalksBack</div>
           <div className="flex gap-3 items-center">
-            <Link href="/auth/signin" className="text-sm text-[var(--text-secondary)] hover:text-[var(--electric-cyan)] transition-colors font-semibold">
-              Sign In
-            </Link>
+            <button
+              type="button"
+              onClick={handleAdminAccess}
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--electric-cyan)] transition-colors font-semibold"
+            >
+              Admin
+            </button>
             <Link href="/auth/signup">
               <button className="btn-primary px-5 py-2 text-sm shadow-[0_0_25px_rgba(0,245,255,0.35)]">
                 Launch an Agent
@@ -434,7 +479,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-white/80 font-medium mb-8 max-w-2xl">
-              Scan, pay, and start a live conversation with every exhibit. Voicify It handles the voice, the paywall, and the branded landing page.
+              Scan, pay, and start a live conversation with every exhibit. ITtalksBack handles the voice, the paywall, and the branded landing page.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -782,6 +827,25 @@ export default function LandingPage() {
                     <div className="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/60 text-center">&nbsp;</div>
                   </div>
                 </div>
+
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[78%] pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={conversationStatus === 'connected' ? stopConversation : startConversation}
+                    className="w-full rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold px-4 py-3 hover:border-[var(--electric-cyan)]/70 hover:shadow-[0_0_20px_rgba(0,245,255,0.25)] transition-all"
+                  >
+                    {conversationStatus === 'connecting' && 'Connecting...'}
+                    {conversationStatus === 'connected' && 'End Conversation'}
+                    {conversationStatus === 'idle' && 'Talk with Mona Lisa'}
+                    {conversationStatus === 'error' && 'Retry Conversation'}
+                  </button>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.24em] text-white/60 text-center">
+                    {conversationStatus === 'connected' && 'Live voice on'}
+                    {conversationStatus === 'connecting' && 'Opening voice channel'}
+                    {conversationStatus === 'idle' && 'Tap to start'}
+                    {conversationStatus === 'error' && (conversationError ? 'Check mic + retry' : 'Retry')}
+                  </div>
+                </div>
               </div>
               <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-gradient-to-br from-[var(--electric-cyan)]/30 to-[var(--royal-violet)]/20 rounded-full blur-2xl" />
             </div>
@@ -789,65 +853,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Section 5: QR CTA */}
-      <section
-        ref={qrRef}
-        className="relative min-h-screen flex items-center justify-center py-32 px-4"
-        style={{
-          background: 'linear-gradient(135deg, #0f1628 0%, #101c33 40%, #0f1628 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'gradientShift 20s ease infinite'
-        }}
-      >
-        <div className="absolute inset-0 bg-[url('/assets/backgrounds/neural-grid.png')] opacity-20 mix-blend-screen" />
-
-        <div className="relative max-w-4xl mx-auto text-center z-10">
-          <div className="qr-image relative w-64 h-64 mx-auto mb-12">
-            <Image
-              src="/assets/icons/qr-artistic.png"
-              alt="Artistic QR code"
-              fill
-              sizes="256px"
-              className="object-contain drop-shadow-[0_0_40px_rgba(0,245,255,0.45)]"
-            />
-          </div>
-
-          <div className="cta-button opacity-0">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg">
-              Ready to <span className="gradient-text">Give Voice</span> to Your Exhibits?
-            </h2>
-            <p className="text-lg text-white/80 font-medium mb-10 max-w-2xl mx-auto">
-              Launch a QR-to-voice journey that feels intentional, branded, and alive for every venue.
-            </p>
-            <Link href="/auth/signup">
-              <button
-                className="btn-primary text-lg px-10 py-5 shadow-2xl"
-                style={{
-                  boxShadow: '0 0 60px rgba(0,245,255,0.6)',
-                  animation: 'pulse 2s ease-in-out infinite'
-                }}
-              >
-                Launch Your First Agent
-              </button>
-            </Link>
-            <p className="text-sm text-white/70 mt-6 font-medium">
-              No credit card required · 14-day free trial · Cancel anytime
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 px-4 bg-[#05060B]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-2xl font-bold gradient-text">Voicify It</div>
+          <div className="text-2xl font-bold gradient-text">ITtalksBack</div>
           <div className="text-white/60 text-sm">
-            (c) 2024 Voicify It. All rights reserved.
+            (c) 2024 ITtalksBack. All rights reserved.
           </div>
           <div className="flex gap-6">
-            <Link href="/auth/signin" className="text-white/70 hover:text-[var(--electric-cyan)] transition-colors">
-              Sign In
-            </Link>
+            <button
+              type="button"
+              onClick={handleAdminAccess}
+              className="text-white/70 hover:text-[var(--electric-cyan)] transition-colors"
+            >
+              Admin
+            </button>
             <Link href="/exhibits" className="text-white/70 hover:text-[var(--electric-cyan)] transition-colors">
               Dashboard
             </Link>

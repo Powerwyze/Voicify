@@ -60,7 +60,7 @@ export default function AuthDebugPage() {
         />
         <div className="flex gap-2 pt-2">
           <button onClick={signUp} className="px-3 py-2 border rounded">Sign Up</button>
-          <button onClick={signIn} className="px-3 py-2 border rounded">Sign In</button>
+          <button onClick={signIn} className="px-3 py-2 border rounded">Admin</button>
           <button onClick={signOut} className="px-3 py-2 border rounded">Sign Out</button>
         </div>
         {status && <div className="text-sm">{status}</div>}

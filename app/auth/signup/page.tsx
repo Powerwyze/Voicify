@@ -38,7 +38,7 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Sign Up</CardTitle>
-          <CardDescription>Create your Voicify It account</CardDescription>
+          <CardDescription>Create your ITtalksBack account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-4">
@@ -79,7 +79,7 @@ export default function SignUpPage() {
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/auth/signin" className="text-primary hover:underline">
-              Sign In
+              Admin
             </Link>
           </div>
         </CardContent>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -14,6 +14,27 @@ export default function SignInPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAuthorized, setIsAuthorized] = useState(false)
+
+  const adminPasscode = '0987654321'
+  const adminPasscodeKey = 'ittalksback-admin-passcode'
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(adminPasscodeKey)
+    if (stored === adminPasscode) {
+      setIsAuthorized(true)
+      return
+    }
+
+    const entered = window.prompt('Enter admin passcode')
+    if (entered === adminPasscode) {
+      sessionStorage.setItem(adminPasscodeKey, adminPasscode)
+      setIsAuthorized(true)
+      return
+    }
+
+    router.replace('/')
+  }, [router])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,12 +61,16 @@ export default function SignInPage() {
     }
   }
 
+  if (!isAuthorized) {
+    return null
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>Welcome back to Voicify It</CardDescription>
+          <CardTitle>Admin</CardTitle>
+          <CardDescription>Welcome back to ITtalksBack</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignIn} className="space-y-4">
@@ -79,7 +104,7 @@ export default function SignInPage() {
               <div className="text-sm text-destructive">{error}</div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : 'Admin'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

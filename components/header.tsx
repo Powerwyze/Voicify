@@ -38,7 +38,7 @@ export function Header() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/exhibits" className="text-xl font-bold gradient-text">
-            Voicify It
+            ITtalksBack
           </Link>
           <nav className="flex gap-4">
             <Link href="/exhibits" className="text-sm hover:underline">
